@@ -25,17 +25,19 @@ class finetune_hypers:
 
 class paths:
     """Relevant paths for MobilePoser. Change as necessary."""
-    root_dir = Path().absolute()
+    root_dir = Path(__file__).parent.parent.absolute()
     checkpoint = root_dir / "checkpoints"
-    smpl_file = root_dir / "smpl/basicmodel_m.pkl"
-    weights_file = root_dir / "checkpoints/weights.pth"
-    raw_amass = Path("/data/projects/Pose/raw/AMASS")           # TODO: replace with your path
-    raw_dip = Path("/data/projects/Pose/raw/DIP_IMU")           # TODO: replace with your path
-    raw_imuposer = Path("/data/projects/Pose/raw/IMUPoser")     # TODO: replace with your path
+    smpl_file = root_dir / "mobileposer/smpl/basicmodel_m.pkl"
+    weights_file = "mobileposer/checkpoints/weights.pth"
+    dev_data = root_dir / "data/dev_data"
+    # weights_file = root_dir / "checkpoints/weights.pth"
+    # raw_amass = Path("/data/projects/Pose/raw/AMASS")           # TODO: replace with your path
+    # raw_dip = Path("/data/projects/Pose/raw/DIP_IMU")           # TODO: replace with your path
+    # raw_imuposer = Path("/data/projects/Pose/raw/IMUPoser")     # TODO: replace with your path
     eval_dir = root_dir / "data/processed_datasets/eval"
     processed_datasets = root_dir / "data/processed_datasets"
-    raw_totalcapture_official = root_dir / "data/raw/TotalCapture/raw"  # TODO: replace with your path
-    calibrated_totalcapture = root_dir / "data/raw/TotalCapture/IMU"  # TODO: replace with your path
+    # raw_totalcapture_official = root_dir / "data/raw/TotalCapture/raw"  # TODO: replace with your path
+    # calibrated_totalcapture = root_dir / "data/raw/TotalCapture/IMU"  # TODO: replace with your path
 
 class model_config:
     """MobilePoser Model configurations."""
@@ -66,6 +68,9 @@ class amass:
         'lw_rp': [0, 3],
         'rw_lp': [1, 2],
         'rw_rp': [1, 3],
+        'lp_rp': [2, 3],  # Both pockets (left + right)
+        'lw_lp_rp': [0, 2, 3],  # Left wrist + both pockets
+        'rw_lp_rp': [1, 2, 3],  # Right wrist + both pockets
         'lp_h': [2, 4],
         'rp_h': [3, 4],
         'lp': [2],
