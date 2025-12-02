@@ -1,5 +1,6 @@
 """
 Code adapted from: https://github.com/Xinyu-Yi/TransPose/blob/main/live_demo.py
+Modified to use HTTP instead of UDP for phone IMU data
 """
 
 import os
@@ -12,7 +13,10 @@ from datetime import datetime
 from argparse import ArgumentParser
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import Clock
+from pygame_visualizer import PoseVisualizer
 import pickle
+from flask import Flask, request
+from threading import Lock
 
 from articulate.math import *
 from mobileposer.models import *
@@ -22,44 +26,94 @@ from mobileposer.config import *
 # Configurations 
 USE_PHONE_AS_WATCH = False
 
-import socket
-import struct
 
-class IMUSet:
+class PhoneIMUSet:
     """
-    Sensor order: left forearm, right forearm, left lower leg, right lower leg, head, pelvis
+    HTTP-based IMU receiver for phone data.
+    Mimics the original IMUSet interface but receives data via HTTP instead of UDP.
     """
-    def __init__(self, imu_host='192.168.1.223', imu_port=8000, buffer_len=26):
+    def __init__(self, imu_host='0.0.0.0', imu_port=8000, buffer_len=26):
+        """
+        Init a PhoneIMUSet for receiving phone IMU data via HTTP.
 
+        :param imu_host: The host to bind the HTTP server to.
+        :param imu_port: The port to bind the HTTP server to.
+        :param buffer_len: Max number of frames in the readonly buffer.
+        """
         self.imu_host = imu_host
         self.imu_port = imu_port
         self.clock = Clock()
 
-        self._imu_socket = None
         self._buffer_len = buffer_len
         self._quat_buffer = []
         self._acc_buffer = []
         self._is_reading = False
         self._read_thread = None
+        self._lock = Lock()
+        
+        # Flask app for HTTP server
+        self._app = Flask(__name__)
+        self._setup_routes()
 
-    def _read(self):
-        """
-        The thread that reads imu measurements into the buffer. It is a producer for the buffer.
-        """
-        while self._is_reading:
-            data, addr = self._imu_socket.recvfrom(1024)
-            data_str = data.decode("utf-8")
+    def _setup_routes(self):
+        """Setup Flask routes"""
+        @self._app.route('/data', methods=['POST'])
+        def receive_data():
+            """Endpoint to receive phone IMU data"""
+            try:
+                data = request.get_json()
+                
+                # Extract orientation and acceleration from payload
+                quat = None
+                acc = None
+                
+                if 'payload' in data and len(data['payload']) > 0:
+                    # Find orientation and accelerometer data
+                    for item in reversed(data['payload']):
+                        if item['name'] == 'orientation' and quat is None:
+                            values = item['values']
+                            quat = np.array([
+                                values['qx'],
+                                values['qy'],
+                                values['qz'],
+                                values['qw']
+                            ])
+                        elif item['name'] == 'accelerometer' and acc is None:
+                            values = item['values']
+                            acc = np.array([
+                                values['x'],
+                                values['y'],
+                                values['z']
+                            ])
+                        
+                        if quat is not None and acc is not None:
+                            break
+                    
+                    if quat is not None and acc is not None:
+                        # Format data to match original IMUSet format
+                        # Original expects 6 IMUs, we only have 1 phone, so replicate to position 3 (right pocket)
+                        # and leave others as zeros
+                        quat_full = np.zeros((6, 4))
+                        acc_full = np.zeros((6, 3))
+                        
+                        # Place phone data at position 3 (right pocket) - matching 'rp' combo
+                        quat_full[3] = quat
+                        acc_full[3] = acc * -9.8  # Scale acceleration like original
+                        
+                        with self._lock:
+                            tranc = int(len(self._quat_buffer) == self._buffer_len)
+                            self._quat_buffer = self._quat_buffer[tranc:] + [quat_full.astype(float)]
+                            self._acc_buffer = self._acc_buffer[tranc:] + [acc_full.astype(float)]
+                            self.clock.tick()
+                
+                return {'status': 'ok'}, 200
+            except Exception as e:
+                print(f"Error processing data: {e}")
+                return {'status': 'error', 'message': str(e)}, 400
 
-            a = np.array(data_str.split("#")[0].split(",")).astype(np.float64)
-            q = np.array(data_str.split("#")[1].strip("$").split(",")).astype(np.float64)
-
-            acc = a.reshape((-1, 3))
-            quat = q.reshape((-1, 4))
-
-            tranc = int(len(self._quat_buffer) == self._buffer_len)
-            self._quat_buffer = self._quat_buffer[tranc:] + [quat.astype(float)]
-            self._acc_buffer = self._acc_buffer[tranc:] + [-9.8 * acc.astype(float)]
-            self.clock.tick()
+    def _run_server(self):
+        """Run Flask server in thread"""
+        self._app.run(host=self.imu_host, port=self.imu_port, debug=False, threaded=True)
 
     def start_reading(self):
         """
@@ -67,14 +121,12 @@ class IMUSet:
         """
         if self._read_thread is None:
             self._is_reading = True
-            self._read_thread = threading.Thread(target=self._read)
+            self._read_thread = threading.Thread(target=self._run_server)
             self._read_thread.setDaemon(True)
             self._quat_buffer = []
             self._acc_buffer = []
-            self._imu_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self._imu_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self._imu_socket.bind((self.imu_host, self.imu_port))
             self._read_thread.start()
+            print(f"HTTP server started on http://{self.imu_host}:{self.imu_port}/data")
         else:
             print('Failed to start reading thread: reading is already start.')
 
@@ -84,9 +136,9 @@ class IMUSet:
         """
         if self._read_thread is not None:
             self._is_reading = False
-            self._read_thread.join()
+            # Note: Flask doesn't have a clean shutdown in thread mode
+            # The daemon thread will be killed when main thread exits
             self._read_thread = None
-            self._imu_socket.close()
 
     def get_current_buffer(self):
         """
@@ -94,25 +146,31 @@ class IMUSet:
 
         :return: Quaternion and acceleration torch.Tensor in shape [buffer_len, 6, 4] and [buffer_len, 6, 3].
         """
-        q = torch.from_numpy(np.array(self._quat_buffer)).float()
-        a = torch.from_numpy(np.array(self._acc_buffer)).float()
-        return q, a
+        with self._lock:
+            q = torch.from_numpy(np.array(self._quat_buffer)).float()
+            a = torch.from_numpy(np.array(self._acc_buffer)).float()
+            return q, a
 
     def get_mean_measurement_of_n_second(self, num_seconds=3, buffer_len=120):
         """
-        Start reading for `num_seconds` seconds and then close the connection. The average of the last
-        `buffer_len` frames of the measured quaternions and accelerations are returned.
+        Collect data for `num_seconds` seconds. The average of the collected
+        frames of the measured quaternions and accelerations are returned.
         Note that this function is blocking.
 
-        :param num_seconds: How many seconds to read.
+        :param num_seconds: How many seconds to collect data.
         :param buffer_len: Buffer length. Must be smaller than 60 * `num_seconds`.
         :return: The mean quaternion and acceleration torch.Tensor in shape [6, 4] and [6, 3] respectively.
         """
         save_buffer_len = self._buffer_len
         self._buffer_len = buffer_len
-        self.start_reading()
+        # Clear buffer and collect fresh data
+        with self._lock:
+            self._quat_buffer = []
+            self._acc_buffer = []
+        # If not already reading, start
+        if self._read_thread is None:
+            self.start_reading()
         time.sleep(num_seconds)
-        self.stop_reading()
         q, a = self.get_current_buffer()
         self._buffer_len = save_buffer_len
         return q.mean(dim=0), a.mean(dim=0)
@@ -140,22 +198,37 @@ if __name__ == '__main__':
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
     # setup IMU collection
-    imu_set = IMUSet(buffer_len=1)
+    imu_set = PhoneIMUSet(buffer_len=1)
+
+    # Wait for first packet before calibration
+    imu_set.start_reading()
+    print('Waiting for phone to send data...')
+    while len(imu_set._quat_buffer) == 0:
+        time.sleep(0.1)
+    print('Receiving data from phone!')
 
     # align IMU to SMPL body frame
     input('Put imu 1 aligned with your body reference frame (x = Left, y = Up, z = Forward) and then press any key.')
-    print('Keep for 3 seconds ...', end='')
-    oris = imu_set.get_mean_measurement_of_n_second(num_seconds=3, buffer_len=40)[0][0]
+    print('Capturing data for 3 seconds...')
+    time.sleep(2)  # Brief wait for buffer to start filling
+    if len(imu_set._quat_buffer) == 0:
+        print('ERROR: No data received. Check phone connection.')
+        exit(1)
+    oris = imu_set.get_mean_measurement_of_n_second(num_seconds=3, buffer_len=40)[0][0]    
     smpl2imu = quaternion_to_rotation_matrix(oris).view(3, 3).t()
+    input('Data collected! Press any key to continue to T-pose calibration.')
+    
 
     # bone and acceleration offset calibration
-    input('\tFinish.\nWear all imus correctly and press any key.')
+    input('\tFinish.\nKeep phone in right pocket and press any key.')
     for i in range(3, 0, -1):
         print('\rStand straight in T-pose and be ready. The calibration will begin after %d seconds.' % i, end='')
         time.sleep(1)
-    print('\nStand straight in T-pose. Keep the pose for 3 seconds ...', end='')
+    # print('\nStand straight in T-pose. Keep the pose for 3 seconds ...', end='')
 
     oris, accs = imu_set.get_mean_measurement_of_n_second(num_seconds=3, buffer_len=40)
+    print(oris.shape)
+    print(oris)
     oris = quaternion_to_rotation_matrix(oris)
     device2bone = smpl2imu.matmul(oris).transpose(1, 2).matmul(torch.eye(3))
     acc_offsets = smpl2imu.matmul(accs.unsqueeze(-1))   # [num_imus, 3, 1], already in global inertial frame
@@ -166,7 +239,7 @@ if __name__ == '__main__':
 
     # load model
     model = load_model(paths.weights_file)
-
+    
     # setup Unity server for visualization
     if args.vis:
         server_for_unity = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -194,10 +267,19 @@ if __name__ == '__main__':
     while running:
         # calibration
         clock.tick(datasets.fps)
-        ori_raw, acc_raw = imu_set.get_current_buffer() # [buffer_len, 5, 4]
+        ori_raw, acc_raw = imu_set.get_current_buffer() # [buffer_len, 6, 4] and [buffer_len, 6, 3]
+        
+        if ori_raw.shape[0] == 0:
+            time.sleep(0.01)
+            continue
+        
+        # Take only first 5 IMUs (exclude pelvis at index 5)
+        ori_raw = ori_raw[:, :5, :]  # [buffer_len, 5, 4]
+        acc_raw = acc_raw[:, :5, :]  # [buffer_len, 5, 3]
+        
         ori_raw = quaternion_to_rotation_matrix(ori_raw).view(-1, n_imus, 3, 3)
-        glb_acc = (smpl2imu.matmul(acc_raw.view(-1, n_imus, 3, 1)) - acc_offsets).view(-1, n_imus, 3)
-        glb_ori = smpl2imu.matmul(ori_raw).matmul(device2bone)
+        glb_acc = (smpl2imu.matmul(acc_raw.view(-1, n_imus, 3, 1)) - acc_offsets[:5]).view(-1, n_imus, 3)
+        glb_ori = smpl2imu.matmul(ori_raw).matmul(device2bone[:5])
 
         # normalization 
         _acc = glb_acc.view(-1, 5, 3)[:, [1, 4, 3, 0, 2]] / amass.acc_scale
@@ -205,7 +287,7 @@ if __name__ == '__main__':
         acc = torch.zeros_like(_acc)
         ori = torch.zeros_like(_ori)
 
-        # device combo
+        # device combo - using only right pocket
         combo = 'rp'
         c = amass.combos[combo]
 
@@ -219,7 +301,6 @@ if __name__ == '__main__':
             ori[:, c] = _ori[:, c]
         
         imu_input = torch.cat([acc.flatten(1), ori.flatten(1)], dim=1)
-        # imu_input = torch.cat([_acc[:, c].flatten(1), _ori[:, c].flatten(1)], dim=1)
 
         # predict pose and translation
         with torch.no_grad():
@@ -264,7 +345,7 @@ if __name__ == '__main__':
                 'device2bone': device2bone
             }
         }
-        torch.save(data, f'dev_{int(time.time())}.pt')
+        torch.save(data, paths.dev_data / f'phone_dev_{int(time.time())}.pt')
 
     # clean up threads
     get_input_thread.join()
