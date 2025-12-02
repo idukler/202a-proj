@@ -28,7 +28,7 @@ class paths:
     root_dir = Path(__file__).parent.parent.absolute()
     checkpoint = root_dir / "checkpoints"
     smpl_file = root_dir / "mobileposer/smpl/basicmodel_m.pkl"
-    weights_file = "mobileposer/checkpoints/weights.pth"
+    weights_file = "checkpoints/weights.pth"
     dev_data = root_dir / "data/dev_data"
     # weights_file = root_dir / "checkpoints/weights.pth"
     # raw_amass = Path("/data/projects/Pose/raw/AMASS")           # TODO: replace with your path

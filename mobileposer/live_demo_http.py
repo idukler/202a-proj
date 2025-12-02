@@ -163,19 +163,16 @@ if __name__ == '__main__':
     print("Waiting for phone data...")
     time.sleep(2)
     
-    raise ValuerError("done")
-
-    
     # Specify device
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
     # Load model
     model = load_model(paths.weights_file)
     
-    raise ValuerError(model.params)
-    
     # Setup PyGame visualization
+    print("$$$$$$")
     if args.vis:
+        print("$$$$$$")
         pygame.init()
         screen = pygame.display.set_mode((800, 600))
         pygame.display.set_caption('MobilePoser - Real-time Pose Visualization')
