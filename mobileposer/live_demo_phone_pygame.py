@@ -74,10 +74,10 @@ class PhoneIMUSet:
                         if item['name'] == 'orientation' and quat is None:
                             values = item['values']
                             quat = np.array([
+                                values['qw'],
                                 values['qx'],
                                 values['qy'],
-                                values['qz'],
-                                values['qw']
+                                values['qz'] # was last values['qw']
                             ])
                         elif item['name'] == 'accelerometer' and acc is None:
                             values = item['values']
@@ -98,8 +98,8 @@ class PhoneIMUSet:
                         
                         with self._lock:
                             tranc = int(len(self._quat_buffer) == self._buffer_len)
-                            self._quat_buffer = self._quat_buffer[tranc:] + [quat.astype(float)] #[quat_full.astype(float)]
-                            self._acc_buffer = self._acc_buffer[tranc:] + [-9.8 * acc.astype(float)] #[acc_full.astype(float)]
+                            self._quat_buffer = self._quat_buffer[tranc:] + [quat_full.astype(float)]
+                            self._acc_buffer  = self._acc_buffer[tranc:] + [acc_full.astype(float)]
                             self.clock.tick()
                 
                 return {'status': 'ok'}, 200
@@ -263,6 +263,7 @@ if __name__ == '__main__':
         
         # Take only the last frame
         ori_raw = ori_raw[-1:]
+        print(ori_raw.shape)
         acc_raw = acc_raw[-1:]
         
         ori_raw = quaternion_to_rotation_matrix(ori_raw).view(-1, n_imus, 3, 3)
