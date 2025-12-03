@@ -74,10 +74,10 @@ class PhoneIMUSet:
                         if item['name'] == 'orientation' and quat is None:
                             values = item['values']
                             quat = np.array([
-                                values['qw'],
                                 values['qx'],
                                 values['qy'],
-                                values['qz'] # was last values['qw']
+                                values['qz'],
+                                values['qw']# was here values['qw']
                             ])
                         elif item['name'] == 'accelerometer' and acc is None:
                             values = item['values']
@@ -269,6 +269,10 @@ if __name__ == '__main__':
         ori_raw = quaternion_to_rotation_matrix(ori_raw).view(-1, n_imus, 3, 3)
         glb_acc = (smpl2imu.matmul(acc_raw.view(-1, n_imus, 3, 1)) - acc_offsets).view(-1, n_imus, 3)
         glb_ori = smpl2imu.matmul(ori_raw).matmul(device2bone)
+        
+        # ADDITION
+        flip = torch.diag(torch.tensor([1.0, -1.0, 1.0], device=glb_ori.device))
+        glb_ori = glb_ori.matmul(flip)
 
         # normalization 
         _acc = glb_acc.view(-1, 5, 3)[:, [1, 4, 3, 0, 2]] / amass.acc_scale
