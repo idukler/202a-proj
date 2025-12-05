@@ -62,6 +62,8 @@ class PhoneIMUSet:
         def receive_data():
             try:
                 data = request.get_json()
+                
+                # print("Received data:", data)
 
                 quat = None
                 acc = None
@@ -95,8 +97,19 @@ class PhoneIMUSet:
                 if quat is not None and acc is not None:
                     # Match original IMUSet format: [5,4] quats, [5,3] accs.
                     # Simple version: tile the single phone IMU to all 5 slots.
-                    quat_full = np.tile(quat, (5, 1))               # [5,4]
-                    acc_full = np.tile(acc, (5, 1)) * -9.8          # [5,3]
+                    # quat_full = np.tile((quat), (5, 1))               # [5,4]
+                    # acc_full = np.tile(acc, (5, 1)) * -9.8          # [5,3]
+                    # Match original IMUSet format: [5,4] quats, [5,3] accs.
+                    quat_full = np.zeros((5, 4), dtype=np.float32)
+                    acc_full  = np.zeros((5, 3), dtype=np.float32)
+
+                    # Set all IMUs to identity rotation (w=1,x=y=z=0)
+                    quat_full[:, 0] = 1.0  # w component
+
+                    # Put real phone data in the rp slot (index 3)
+                    rp_index = 0
+                    quat_full[rp_index, :] = quat.astype(np.float32)
+                    acc_full[rp_index, :]  = (acc * -9.8).astype(np.float32)
 
                     with self._lock:
                         tranc = int(len(self._quat_buffer) == self._buffer_len)
