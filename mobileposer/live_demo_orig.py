@@ -19,18 +19,35 @@ from mobileposer.models import *
 from mobileposer.utils.model_utils import *
 from mobileposer.config import *
 
+
+###### additional ######
+
+
 # Configurations 
 USE_PHONE_AS_WATCH = False
 
-import socket
-import struct
 
 class IMUSet:
     """
     Sensor order: left forearm, right forearm, left lower leg, right lower leg, head, pelvis
     """
-    def __init__(self, imu_host='192.168.1.223', imu_port=8000, buffer_len=26):
+    def __init__(self, imu_host='192.168.1.223', imu_port=7777, buffer_len=26):
+        """
+        Init an IMUSet for Noitom Perception Legacy IMUs. Please follow the instructions below.
 
+        Instructions:
+        --------
+        1. Start `Axis Legacy` (Noitom software).
+        2. Click `File` -> `Settings` -> `Broadcasting`, check `TCP` and `Calculation`. Set `Port` to 7002.
+        3. Click `File` -> `Settings` -> `Output Format`, change `Calculation Data` to
+           `Block type = String, Quaternion = Global, Acceleration = Sensor local`
+        4. Place 1 - 6 IMU on left lower arm, right lower arm, left lower leg, right lower leg, head, root.
+        5. Connect 1 - 6 IMU to `Axis Legacy` and continue.
+
+        :param imu_host: The host that `Axis Legacy` runs on.
+        :param imu_port: The port that `Axis Legacy` runs on.
+        :param buffer_len: Max number of frames in the readonly buffer.
+        """
         self.imu_host = imu_host
         self.imu_port = imu_port
         self.clock = Clock()
@@ -48,13 +65,25 @@ class IMUSet:
         """
         while self._is_reading:
             data, addr = self._imu_socket.recvfrom(1024)
+            print("Raw data:", data)
+            print("Raw data (decoded):", data.decode("utf-8"))
             data_str = data.decode("utf-8")
+            print("Data string split:", data_str.split("#"))
+            print("First part:", data_str.split("#")[0])
+            print("Second part:", data_str.split("#")[1])
 
             a = np.array(data_str.split("#")[0].split(",")).astype(np.float64)
             q = np.array(data_str.split("#")[1].strip("$").split(",")).astype(np.float64)
 
+            print("Acceleration array:", a)
+            print("Quaternion array:", q)
+
             acc = a.reshape((-1, 3))
             quat = q.reshape((-1, 4))
+            
+            # DEBUG: show one packet
+            print("recv from", addr, "acc shape", acc.shape, "quat shape", quat.shape)
+
 
             tranc = int(len(self._quat_buffer) == self._buffer_len)
             self._quat_buffer = self._quat_buffer[tranc:] + [quat.astype(float)]
@@ -166,6 +195,13 @@ if __name__ == '__main__':
 
     # load model
     model = load_model(paths.weights_file)
+    
+    
+    ####### ADDITIONAL ########
+    # setup PyGame visualization
+    if args.vis:
+        visualizer = PoseVisualizer()
+    ####### ADDITIONAL ########
 
     # setup Unity server for visualization
     if args.vis:
@@ -206,7 +242,7 @@ if __name__ == '__main__':
         ori = torch.zeros_like(_ori)
 
         # device combo
-        combo = 'rp'
+        combo = 'lw_rp'
         c = amass.combos[combo]
 
         if USE_PHONE_AS_WATCH:
@@ -264,7 +300,7 @@ if __name__ == '__main__':
                 'device2bone': device2bone
             }
         }
-        torch.save(data, f'dev_{int(time.time())}.pt')
+        torch.save(data, paths.dev_data / f'dev_{int(time.time())}.pt')
 
     # clean up threads
     get_input_thread.join()

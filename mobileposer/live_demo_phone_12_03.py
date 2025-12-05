@@ -74,10 +74,11 @@ class PhoneIMUSet:
                         if item['name'] == 'orientation' and quat is None:
                             values = item['values']
                             quat = np.array([
-                                values['qw'], # putting w here as quaternion_to_rotation_matrix expects wxyz
+                                values['qw'],
                                 values['qx'],
                                 values['qy'],
                                 values['qz'],
+                               # was here values['qw']
                             ])
                         elif item['name'] == 'accelerometer' and acc is None:
                             values = item['values']
@@ -92,20 +93,14 @@ class PhoneIMUSet:
                     
                     if quat is not None and acc is not None:
                         # Format data to match original IMUSet format
-                        # Create 5x4 and 5x3 zero matrices and place the right-pocket phone data
-                        # into the canonical right-pocket slot (index 3 in AMASS layout: lw, rw, lp, rp, h).
-                        quat_full = np.zeros((5, 4), dtype=np.float32)
-                        acc_full = np.zeros((5, 3), dtype=np.float32)
-
-                        # Right pocket (rp) is index 3 in the AMASS / model layout
-                        rp_index = 0
-                        quat_full[rp_index, :] = quat.astype(np.float32)
-                        acc_full[rp_index, :] = (acc * -9.8).astype(np.float32)
-
+                        # Replicate phone data to all 5 IMU positions
+                        quat_full = np.tile(quat, (5, 1))  # [5, 4]
+                        acc_full = np.tile(acc, (5, 1)) * -9.8  # [5, 3]
+                        
                         with self._lock:
                             tranc = int(len(self._quat_buffer) == self._buffer_len)
-                            self._quat_buffer = self._quat_buffer[tranc:] + [quat_full]
-                            self._acc_buffer  = self._acc_buffer[tranc:] + [acc_full]
+                            self._quat_buffer = self._quat_buffer[tranc:] + [quat_full.astype(float)]
+                            self._acc_buffer  = self._acc_buffer[tranc:] + [acc_full.astype(float)]
                             self.clock.tick()
                 
                 return {'status': 'ok'}, 200
@@ -228,28 +223,10 @@ if __name__ == '__main__':
         time.sleep(1)
     print('\nStand straight in T-pose. Keep the pose for 3 seconds ...', end='')
 
-    # Get mean quaternions/accelerations over T-pose window
-    q_mean, a_mean = imu_set.get_mean_measurement_of_n_second(num_seconds=3, buffer_len=40)
-    # q_mean: [5,4], a_mean: [5,3]
-
-    # Build per-IMU rotation matrices.
-    # Start with identity for all (dummy IMUs).
-    device = smpl2imu.device
-    R = torch.eye(3, device=device).unsqueeze(0).repeat(5, 1, 1)  # [5,3,3] identities
-
-    # Use only the real phone IMU at row 0 to compute its rotation
-    R[0] = quaternion_to_rotation_matrix(q_mean[0]).view(3, 3)
-
-    # Acceleration offsets: only row 0 is meaningful, others remain zero
-    accs = torch.zeros_like(a_mean)
-    accs[0] = a_mean[0]
-
-    device2bone = smpl2imu.matmul(R).transpose(1, 2).matmul(torch.eye(3, device=device))
+    oris, accs = imu_set.get_mean_measurement_of_n_second(num_seconds=3, buffer_len=40)
+    oris = quaternion_to_rotation_matrix(oris)
+    device2bone = smpl2imu.matmul(oris).transpose(1, 2).matmul(torch.eye(3))
     acc_offsets = smpl2imu.matmul(accs.unsqueeze(-1))   # [num_imus, 3, 1], already in global inertial frame
-    # test
-    print("NaNs in smpl2imu:", torch.isnan(smpl2imu).any().item())
-    print("NaNs in device2bone:", torch.isnan(device2bone).any().item())
-    print("NaNs in acc_offsets:", torch.isnan(acc_offsets).any().item())
 
     # start streaming data
     print('\tFinished Calibrating.\nEstimating poses. Press q to quit')
@@ -285,42 +262,22 @@ if __name__ == '__main__':
             time.sleep(0.01)
             continue
         
-        # # Take only the last frame
-        # ori_raw = ori_raw[-1:]
-        # acc_raw = acc_raw[-1:]
-        
-        # ori_raw = quaternion_to_rotation_matrix(ori_raw).view(-1, n_imus, 3, 3)
-        # glb_acc = (smpl2imu.matmul(acc_raw.view(-1, n_imus, 3, 1)) - acc_offsets).view(-1, n_imus, 3)
-        # glb_ori = smpl2imu.matmul(ori_raw).matmul(device2bone)
         # Take only the last frame
-        ori_raw = ori_raw[-1:]   # [1, 5, 4]
-        acc_raw = acc_raw[-1:]   # [1, 5, 3]
-
-        # Build per-frame rotation matrices for each IMU.
-        # Start with identity for all dummy IMUs.
-        device = smpl2imu.device
-        R = torch.eye(3, device=device).unsqueeze(0).repeat(5, 1, 1)  # [5,3,3]
-
-        # Use only the real phone IMU at row 0 to compute its rotation
-        # ori_raw has shape [1,5,4], so ori_raw[0, 0] is the [4]-vector for IMU 0.
-        R[0] = quaternion_to_rotation_matrix(ori_raw[0, 0]).view(3, 3)
-
-        # Add batch dimension back: [1,5,3,3]
-        ori_mat = R.unsqueeze(0)
-
-        glb_acc = (smpl2imu.matmul(acc_raw.view(-1, n_imus, 3, 1)) - acc_offsets).view(-1, n_imus, 3)
-        glb_ori = smpl2imu.matmul(ori_mat).matmul(device2bone)
+        ori_raw = ori_raw[-1:]
+        print(ori_raw.shape)
+        acc_raw = acc_raw[-1:]
         
-        # # ADDITION
+        ori_raw = quaternion_to_rotation_matrix(ori_raw).view(-1, n_imus, 3, 3)
+        glb_acc = (smpl2imu.matmul(acc_raw.view(-1, n_imus, 3, 1)) - acc_offsets).view(-1, n_imus, 3)
+        glb_ori = smpl2imu.matmul(ori_raw).matmul(device2bone)
+        
+        # ADDITION
         flip = torch.diag(torch.tensor([1.0, -1.0, 1.0], device=glb_ori.device))
         glb_ori = glb_ori.matmul(flip)
 
         # normalization 
-        # _acc = glb_acc.view(-1, 5, 3)[:, [1, 4, 3, 0, 2]] / amass.acc_scale
-        # _ori = glb_ori.view(-1, 5, 3, 3)[:, [1, 4, 3, 0, 2]]
-        
-        _acc = glb_acc.view(-1, 5, 3) / amass.acc_scale
-        _ori = glb_ori.view(-1, 5, 3, 3)
+        _acc = glb_acc.view(-1, 5, 3)[:, [1, 4, 3, 0, 2]] / amass.acc_scale
+        _ori = glb_ori.view(-1, 5, 3, 3)[:, [1, 4, 3, 0, 2]]
         acc = torch.zeros_like(_acc)
         ori = torch.zeros_like(_ori)
 
@@ -340,20 +297,11 @@ if __name__ == '__main__':
         
         imu_input = torch.cat([acc.flatten(1), ori.flatten(1)], dim=1)
 
-        print("NaNs in _acc:", torch.isnan(_acc).any().item(),
-              "NaNs in _ori:", torch.isnan(_ori).any().item())
-        print("NaNs in imu_input:", torch.isnan(imu_input).any().item())
-
-        #
         # predict pose and translation
         with torch.no_grad():
             output = model.forward_online(imu_input.squeeze(0), [imu_input.shape[0]])
             pred_pose = output[0] # [24, 3, 3]
             pred_tran = output[2] # [3]
-        
-        
-        print("NaNs in pred_pose:", torch.isnan(pred_pose).any().item(),
-              "NaNs in pred_tran:", torch.isnan(pred_tran).any().item())
         
         # convert rotmatrix to axis angle
         pose = rotation_matrix_to_axis_angle(pred_pose.view(1, 216)).view(72)

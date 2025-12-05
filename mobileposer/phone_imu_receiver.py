@@ -67,42 +67,25 @@ def receive_data():
         
         # Extract latest sensor readings from payload
         if 'payload' in data and len(data['payload']) > 0:
-            latest = data['payload'][-1]  # Get most recent reading
             
-            # Extract orientation (quaternion)
-            if 'name' in latest and latest['name'] == 'orientation':
-                values = latest['values']
-                quat = np.array([
-                    values['qx'],
-                    values['qy'], 
-                    values['qz'],
-                    values['qw']
-                ])
-            else:
-                print("No orientation data found")
-                # Find orientation in payload
-                for item in reversed(data['payload']):
-                    if item['name'] == 'orientation':
-                        values = item['values']
-                        quat = np.array([
-                            values['qx'],
-                            values['qy'],
-                            values['qz'],
-                            values['qw']
-                        ])
-                        break
-            
-            # Extract accelerometer
             for item in reversed(data['payload']):
-                if item['name'] == 'accelerometer':
+                if item['name'] == 'orientation' and quat is None:
+                    values = item['values']
+                    quat = np.array([
+                        values['qw'],
+                        values['qx'],
+                        values['qy'],
+                        values['qz'],
+                        # was here values['qw']
+                    ])
+                elif item['name'] == 'accelerometer' and acc is None:
                     values = item['values']
                     acc = np.array([
                         values['x'],
                         values['y'],
                         values['z']
                     ])
-                    break
-            
+                        
             # Update buffer
             phone_buffer.update(quat, acc)
             
