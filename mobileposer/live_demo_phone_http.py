@@ -27,7 +27,8 @@ from pygame_visualizer import PoseVisualizer
 
 # Configurations
 USE_PHONE_AS_WATCH = False
-
+global GLOBAL_COUNT
+# GLOBAL_COUNT = 0
 
 class PhoneIMUSet:
     """HTTP-based IMU receiver.
@@ -67,8 +68,14 @@ class PhoneIMUSet:
 
                 quat = None
                 acc = None
+                quat_wrist = None
+                acc_wrist = None
+            
 
                 if data and "payload" in data and len(data["payload"]) > 0:
+                    # count = len(data["payload"])
+                    # print(f"=============== Global Count: {GLOBAL_COUNT} ===================")
+                    
                     # Search from newest to oldest
                     for item in reversed(data["payload"]):
                         name = item.get("name")
@@ -90,9 +97,17 @@ class PhoneIMUSet:
                             az = values.get("z")
                             if None not in (ax, ay, az):
                                 acc = np.array([ax, ay, az], dtype=np.float32)
+                          
+                        # elif name == "wrist motion" and acc_wrist is None and quat_wrist is None:
+                        #     # Handle write motion data if needed
+                        #     print("Received wrist motion data:", values)
 
                         if quat is not None and acc is not None:
                             break
+                        
+                        
+                        # GLOBAL_COUNT += 1
+
 
                 if quat is not None and acc is not None:
                     # Match original IMUSet format: [5,4] quats, [5,3] accs.
@@ -240,6 +255,8 @@ if __name__ == "__main__":
     accs_list, oris_list = [], []
     raw_accs, raw_oris = [], []
     poses, trans = [], []
+    
+    actual_poses = []
 
     while running:
         clock.tick(datasets.fps)
@@ -282,18 +299,21 @@ if __name__ == "__main__":
         with torch.no_grad():
             output = model.forward_online(imu_input.squeeze(0), [imu_input.shape[0]])
             pred_pose = output[0]
+            print("pred_pose shape:", pred_pose.shape)
+            # pred_joints = output[1]
             pred_tran = output[2]
 
         pose = rotation_matrix_to_axis_angle(pred_pose.view(1, 216)).view(72)
         tran = pred_tran
 
         if args.save:
-            accs_list.append(glb_acc)
-            oris_list.append(glb_ori)
-            raw_accs.append(acc_raw)
-            raw_oris.append(ori_raw)
-            poses.append(pred_pose)
-            trans.append(pred_tran)
+            actual_poses.append(pose.cpu())
+            # accs_list.append(glb_acc)
+            # oris_list.append(glb_ori)
+            # raw_accs.append(acc_raw)
+            # raw_oris.append(ori_raw)
+            # poses.append(pred_pose)
+            # trans.append(pred_tran)
 
         if args.vis:
             if not visualizer.handle_events():
@@ -306,16 +326,17 @@ if __name__ == "__main__":
 
     if args.save:
         data = {
-            "raw_acc": torch.cat(raw_accs, dim=0),
-            "raw_ori": torch.cat(raw_oris, dim=0),
-            "acc": torch.cat(accs_list, dim=0),
-            "ori": torch.cat(oris_list, dim=0),
-            "pose": torch.cat(poses, dim=0),
-            "tran": torch.cat(trans, dim=0),
+            "raw_acc": torch.cat(raw_accs, dim=0) if len(raw_accs) > 0 else torch.empty(0, dtype=torch.float32),
+            "raw_ori": torch.cat(raw_oris, dim=0) if len(raw_oris) > 0 else torch.empty(0, dtype=torch.float32),
+            "acc": torch.cat(accs_list, dim=0) if len(accs_list) > 0 else torch.empty(0, dtype=torch.float32),
+            "ori": torch.cat(oris_list, dim=0) if len(oris_list) > 0 else torch.empty(0, dtype=torch.float32),
+            "pose": torch.cat(poses, dim=0) if len(poses) > 0 else torch.empty(0, dtype=torch.float32),
+            "tran": torch.cat(trans, dim=0) if len(trans) > 0 else torch.empty(0, dtype=torch.float32),
             "calibration": {
                 "smpl2imu": smpl2imu,
                 "device2bone": device2bone,
             },
+            "actual_poses": torch.stack(actual_poses, dim=0)
         }
         torch.save(data, f"phone_dev_{int(time.time())}.pt")
 
