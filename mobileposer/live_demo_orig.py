@@ -81,9 +81,6 @@ class IMUSet:
             acc = a.reshape((-1, 3))
             quat = q.reshape((-1, 4))
             
-            # DEBUG: show one packet
-            print("recv from", addr, "acc shape", acc.shape, "quat shape", quat.shape)
-
 
             tranc = int(len(self._quat_buffer) == self._buffer_len)
             self._quat_buffer = self._quat_buffer[tranc:] + [quat.astype(float)]

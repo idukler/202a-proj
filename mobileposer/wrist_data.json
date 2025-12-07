@@ -1,0 +1,976 @@
+{
+  "messageId": 4798,
+  "sessionId": "1056e29f-d85c-4918-ac4d-a66a73625413",
+  "deviceId": "6c224bc8-e74f-4294-9413-1c24092b5a41",
+  "payload": [
+    {
+      "name": "wrist motion",
+      "time": 1765049904129021000,
+      "values": {
+        "rotationRateX": -0.1551256626844406,
+        "rotationRateY": -0.001572704641148448,
+        "rotationRateZ": -0.013088618405163288,
+        "gravityX": 0.009272837080061436,
+        "gravityY": 0.7323861122131348,
+        "gravityZ": -0.6808264851570129,
+        "accelerationX": -0.002879396080970764,
+        "accelerationY": -0.020792484283447266,
+        "accelerationZ": -0.006002187728881836,
+        "quaternionW": 0.24700136143116264,
+        "quaternionX": -0.1124963040386302,
+        "quaternionY": -0.38331625665652824,
+        "quaternionZ": 0.8828383899944715
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904138989800,
+      "values": {
+        "rotationRateX": -0.15877152979373932,
+        "rotationRateY": -0.0009444651659578085,
+        "rotationRateZ": -0.013347744010388851,
+        "gravityX": 0.009183401241898537,
+        "gravityY": 0.7332731485366821,
+        "gravityZ": -0.6798721551895142,
+        "accelerationX": -0.0006079636514186859,
+        "accelerationY": -0.01867353916168213,
+        "accelerationZ": -0.00463712215423584,
+        "quaternionW": 0.24697267900899247,
+        "quaternionX": -0.11262969589353046,
+        "quaternionY": -0.38389903850857415,
+        "quaternionZ": 0.8825760713982747
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904148960000,
+      "values": {
+        "rotationRateX": -0.1937355101108551,
+        "rotationRateY": -0.004234267398715019,
+        "rotationRateZ": -0.02053694799542427,
+        "gravityX": 0.00908118486404419,
+        "gravityY": 0.7343166470527649,
+        "gravityZ": -0.6787463426589966,
+        "accelerationX": -0.0003379080444574356,
+        "accelerationY": -0.016787350177764893,
+        "accelerationZ": 0.002843022346496582,
+        "quaternionW": 0.24694871896625026,
+        "quaternionX": -0.11279283987563951,
+        "quaternionY": -0.3845836824722295,
+        "quaternionZ": 0.8822638059320285
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904158929200,
+      "values": {
+        "rotationRateX": -0.2129049450159073,
+        "rotationRateY": -0.007661756128072739,
+        "rotationRateZ": -0.026088306680321693,
+        "gravityX": 0.008898267522454262,
+        "gravityY": 0.7358200550079346,
+        "gravityZ": -0.6771186590194702,
+        "accelerationX": -0.0028100144118070602,
+        "accelerationY": -0.0031845569610595703,
+        "accelerationZ": 0.003809332847595215,
+        "quaternionW": 0.2469123457853809,
+        "quaternionX": -0.11300909881775432,
+        "quaternionY": -0.38557700125430255,
+        "quaternionZ": 0.8818126720408628
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904168899000,
+      "values": {
+        "rotationRateX": -0.2312437891960144,
+        "rotationRateY": -0.017947683110833168,
+        "rotationRateZ": -0.036938026547431946,
+        "gravityX": 0.008580726571381092,
+        "gravityY": 0.7375034689903259,
+        "gravityZ": -0.6752887964248657,
+        "accelerationX": -0.0022788504138588905,
+        "accelerationY": 0.002776622772216797,
+        "accelerationZ": -0.004810631275177002,
+        "quaternionW": 0.24688889384224103,
+        "quaternionX": -0.11320055764207435,
+        "quaternionY": -0.3867056145400332,
+        "quaternionZ": 0.8813002934578081
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904178868000,
+      "values": {
+        "rotationRateX": -0.2546263337135315,
+        "rotationRateY": -0.025644484907388687,
+        "rotationRateZ": -0.05000961944460869,
+        "gravityX": 0.00814172811806202,
+        "gravityY": 0.7390933036804199,
+        "gravityZ": -0.6735539436340332,
+        "accelerationX": 0.004309450276196003,
+        "accelerationY": -0.013751447200775146,
+        "accelerationZ": -0.007216930389404297,
+        "quaternionW": 0.24689849789152976,
+        "quaternionX": -0.11332307697839453,
+        "quaternionY": -0.3877897837799422,
+        "quaternionZ": 0.8808054101651713
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904188838000,
+      "values": {
+        "rotationRateX": -0.2865146994590759,
+        "rotationRateY": -0.04944728687405586,
+        "rotationRateZ": -0.05914852023124695,
+        "gravityX": 0.0074711996130645275,
+        "gravityY": 0.7406179308891296,
+        "gravityZ": -0.6718849539756775,
+        "accelerationX": 0.00922192819416523,
+        "accelerationY": -0.02401942014694214,
+        "accelerationZ": -0.004827141761779785,
+        "quaternionW": 0.2469405497179535,
+        "quaternionX": -0.11332455240922287,
+        "quaternionY": -0.38886383580608774,
+        "quaternionZ": 0.880319816675846
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904198807000,
+      "values": {
+        "rotationRateX": -0.3271186053752899,
+        "rotationRateY": -0.07279922068119049,
+        "rotationRateZ": -0.07120358198881149,
+        "gravityX": 0.006552917417138815,
+        "gravityY": 0.7421779632568359,
+        "gravityZ": -0.670170783996582,
+        "accelerationX": 0.010842092335224152,
+        "accelerationY": -0.015111982822418213,
+        "accelerationZ": -0.011835992336273193,
+        "quaternionW": 0.24697754072218536,
+        "quaternionX": -0.11320202011727061,
+        "quaternionY": -0.389999886581856,
+        "quaternionZ": 0.8798223879516008
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904208777000,
+      "values": {
+        "rotationRateX": -0.38279661536216736,
+        "rotationRateY": -0.09628216922283173,
+        "rotationRateZ": -0.09238822758197784,
+        "gravityX": 0.005378775764256716,
+        "gravityY": 0.7440004348754883,
+        "gravityZ": -0.6681574583053589,
+        "accelerationX": 0.015129033476114273,
+        "accelerationY": -0.007992804050445557,
+        "accelerationZ": -0.012964308261871338,
+        "quaternionW": 0.24702710040795325,
+        "quaternionX": -0.11300941302037129,
+        "quaternionY": -0.39134402026682225,
+        "quaternionZ": 0.8792361957507959
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904218745900,
+      "values": {
+        "rotationRateX": -0.40858694911003113,
+        "rotationRateY": -0.12541581690311432,
+        "rotationRateZ": -0.09636566042900085,
+        "gravityX": 0.0039343638345599174,
+        "gravityY": 0.7461360692977905,
+        "gravityZ": -0.6657819151878357,
+        "accelerationX": 0.015276464633643627,
+        "accelerationY": -0.014995932579040527,
+        "accelerationZ": -0.014332890510559082,
+        "quaternionW": 0.24703878626039738,
+        "quaternionX": -0.11272849860776443,
+        "quaternionY": -0.39293935236301064,
+        "quaternionZ": 0.8785572750902857
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904228716000,
+      "values": {
+        "rotationRateX": -0.41664594411849976,
+        "rotationRateY": -0.1417844146490097,
+        "rotationRateZ": -0.1050795242190361,
+        "gravityX": 0.0023136448580771685,
+        "gravityY": 0.7484344244003296,
+        "gravityZ": -0.6632047891616821,
+        "accelerationX": 0.016118980944156647,
+        "accelerationY": -0.01970517635345459,
+        "accelerationZ": -0.009707808494567871,
+        "quaternionW": 0.24701975242766094,
+        "quaternionX": -0.11237886443289324,
+        "quaternionY": -0.39467530876348217,
+        "quaternionZ": 0.8778289399362387
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904238685200,
+      "values": {
+        "rotationRateX": -0.39139625430107117,
+        "rotationRateY": -0.15294598042964935,
+        "rotationRateZ": -0.1237991526722908,
+        "gravityX": 0.0004973338218405843,
+        "gravityY": 0.7508344054222107,
+        "gravityZ": -0.6604903936386108,
+        "accelerationX": 0.016180546954274178,
+        "accelerationY": -0.007029473781585693,
+        "accelerationZ": -0.00221407413482666,
+        "quaternionW": 0.24701806336149507,
+        "quaternionX": -0.11195838066712135,
+        "quaternionY": -0.39650992997458834,
+        "quaternionZ": 0.8770561108893835
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904248655000,
+      "values": {
+        "rotationRateX": -0.33543065190315247,
+        "rotationRateY": -0.15305091440677643,
+        "rotationRateZ": -0.143875390291214,
+        "gravityX": -0.0014944171998649836,
+        "gravityY": 0.7528790235519409,
+        "gravityZ": -0.658157229423523,
+        "accelerationX": 0.009810449555516243,
+        "accelerationY": 0.013630986213684082,
+        "accelerationZ": 0.004943728446960449,
+        "quaternionW": 0.24712177454866294,
+        "quaternionX": -0.11141474140688877,
+        "quaternionY": -0.39813080972650244,
+        "quaternionZ": 0.8763614436084054
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904258624000,
+      "values": {
+        "rotationRateX": -0.33024945855140686,
+        "rotationRateY": -0.17332182824611664,
+        "rotationRateZ": -0.1625870317220688,
+        "gravityX": -0.003677998436614871,
+        "gravityY": 0.7545859813690186,
+        "gravityZ": -0.6561908721923828,
+        "accelerationX": 0.00793518964201212,
+        "accelerationY": 0.027701616287231445,
+        "accelerationZ": 0.011568069458007812,
+        "quaternionW": 0.2473138965387553,
+        "quaternionX": -0.11073519210146192,
+        "quaternionY": -0.3995526014122661,
+        "quaternionZ": 0.8757460898822111
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904268593200,
+      "values": {
+        "rotationRateX": -0.32121869921684265,
+        "rotationRateY": -0.181232750415802,
+        "rotationRateZ": -0.1691855490207672,
+        "gravityX": -0.006074798759073019,
+        "gravityY": 0.7567200660705566,
+        "gravityZ": -0.6537107825279236,
+        "accelerationX": 0.011415375396609306,
+        "accelerationY": 0.02208852767944336,
+        "accelerationZ": 0.002023160457611084,
+        "quaternionW": 0.2475029352831562,
+        "quaternionX": -0.1100404594317934,
+        "quaternionY": -0.4012925304644892,
+        "quaternionZ": 0.874984350344149
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904278563000,
+      "values": {
+        "rotationRateX": -0.29853254556655884,
+        "rotationRateY": -0.1711697280406952,
+        "rotationRateZ": -0.16752798855304718,
+        "gravityX": -0.00849621370434761,
+        "gravityY": 0.7587432861328125,
+        "gravityZ": -0.6513343453407288,
+        "accelerationX": 0.009823735803365707,
+        "accelerationY": -0.009002685546875,
+        "accelerationZ": 0.0013405084609985352,
+        "quaternionW": 0.24771189479577024,
+        "quaternionX": -0.10931883771165993,
+        "quaternionY": -0.40296676007132415,
+        "quaternionZ": 0.8742459656337045
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904288532000,
+      "values": {
+        "rotationRateX": -0.267861932516098,
+        "rotationRateY": -0.15405146777629852,
+        "rotationRateZ": -0.1648768186569214,
+        "gravityX": -0.01081048883497715,
+        "gravityY": 0.7605823278427124,
+        "gravityZ": -0.6491515040397644,
+        "accelerationX": 0.004508620128035545,
+        "accelerationY": -0.023628592491149902,
+        "accelerationZ": 0.00745844841003418,
+        "quaternionW": 0.2479517801467724,
+        "quaternionX": -0.10862809588422478,
+        "quaternionY": -0.4045048512390756,
+        "quaternionZ": 0.8735535007505438
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904298502000,
+      "values": {
+        "rotationRateX": -0.179622620344162,
+        "rotationRateY": 0.10608424991369247,
+        "rotationRateZ": 0.10834380984306335,
+        "gravityX": -0.01167941652238369,
+        "gravityY": 0.7621030211448669,
+        "gravityZ": -0.6473504900932312,
+        "accelerationX": -0.0014126179739832878,
+        "accelerationY": 0.0013552308082580566,
+        "accelerationZ": 0.006694912910461426,
+        "quaternionW": 0.24801981978025406,
+        "quaternionX": -0.1085502416294511,
+        "quaternionY": -0.40563729319692365,
+        "quaternionZ": 0.8730185997631768
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904308471000,
+      "values": {
+        "rotationRateX": -0.003698985558003187,
+        "rotationRateY": 0.09292237460613251,
+        "rotationRateZ": 0.1957854926586151,
+        "gravityX": -0.00927961990237236,
+        "gravityY": 0.7626340389251709,
+        "gravityZ": -0.6467636227607727,
+        "accelerationX": 0.010729178786277771,
+        "accelerationY": 0.017502009868621826,
+        "accelerationZ": 0.007496654987335205,
+        "quaternionW": 0.24738875805423616,
+        "quaternionX": -0.10964884867655779,
+        "quaternionY": -0.40570350263183463,
+        "quaternionZ": 0.8730294660637524
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904318441200,
+      "values": {
+        "rotationRateX": -0.1264704465866089,
+        "rotationRateY": -0.17072844505310059,
+        "rotationRateZ": -0.026714416220784187,
+        "gravityX": -0.008985413238406181,
+        "gravityY": 0.7629771828651428,
+        "gravityZ": -0.6463629603385925,
+        "accelerationX": 0.06187238544225693,
+        "accelerationY": -0.009711802005767822,
+        "accelerationZ": 0.0037238597869873047,
+        "quaternionW": 0.2469248380500714,
+        "quaternionX": -0.10966799146113171,
+        "quaternionY": -0.405945116133438,
+        "quaternionZ": 0.8730462222390803
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904328410000,
+      "values": {
+        "rotationRateX": -0.1843554526567459,
+        "rotationRateY": -0.144772469997406,
+        "rotationRateZ": -0.0038919239304959774,
+        "gravityX": -0.010318920016288757,
+        "gravityY": 0.7640895247459412,
+        "gravityZ": -0.6450275778770447,
+        "accelerationX": 0.04843536391854286,
+        "accelerationY": -0.006963789463043213,
+        "accelerationZ": -0.029471874237060547,
+        "quaternionW": 0.2466017667157269,
+        "quaternionX": -0.109068059629386,
+        "quaternionY": -0.40692795249699426,
+        "quaternionZ": 0.8727549770342431
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904338380000,
+      "values": {
+        "rotationRateX": -0.11781930178403854,
+        "rotationRateY": -0.039101436734199524,
+        "rotationRateZ": 0.06380696594715118,
+        "gravityX": -0.010620945133268833,
+        "gravityY": 0.7650652527809143,
+        "gravityZ": -0.6438652276992798,
+        "accelerationX": 0.005432977341115475,
+        "accelerationY": -0.008336126804351807,
+        "accelerationZ": -0.021890997886657715,
+        "quaternionW": 0.2461920865072837,
+        "quaternionX": -0.10894189967339508,
+        "quaternionY": -0.40767516731325076,
+        "quaternionZ": 0.8725378202149707
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904348349200,
+      "values": {
+        "rotationRateX": -0.1253965198993683,
+        "rotationRateY": -0.043326277285814285,
+        "rotationRateZ": 0.020003821700811386,
+        "gravityX": -0.01049202959984541,
+        "gravityY": 0.7658182978630066,
+        "gravityZ": -0.6429713368415833,
+        "accelerationX": -0.03739006817340851,
+        "accelerationY": -0.03142809867858887,
+        "accelerationZ": 0.016003072261810303,
+        "quaternionW": 0.245846534463675,
+        "quaternionX": -0.10902245538234945,
+        "quaternionY": -0.40820145179257383,
+        "quaternionZ": 0.8723789728651149
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904358319000,
+      "values": {
+        "rotationRateX": -0.11302321404218674,
+        "rotationRateY": -0.06442410498857498,
+        "rotationRateZ": -0.0213145911693573,
+        "gravityX": -0.010868954472243786,
+        "gravityY": 0.7666152119636536,
+        "gravityZ": -0.642014741897583,
+        "accelerationX": -0.060862623155117035,
+        "accelerationY": 0.0018020868301391602,
+        "accelerationZ": 0.03799563646316528,
+        "quaternionW": 0.24568702059150796,
+        "quaternionX": -0.10893207146169523,
+        "quaternionY": -0.4088109938184366,
+        "quaternionZ": 0.8721497395326303
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904368288000,
+      "values": {
+        "rotationRateX": -0.05581851303577423,
+        "rotationRateY": -0.04895726591348648,
+        "rotationRateZ": -0.008927162736654282,
+        "gravityX": -0.011348365806043148,
+        "gravityY": 0.7671692967414856,
+        "gravityZ": -0.6413442492485046,
+        "accelerationX": -0.05632436275482178,
+        "accelerationY": 0.048245131969451904,
+        "accelerationZ": 0.039888620376586914,
+        "quaternionW": 0.24559215455736078,
+        "quaternionX": -0.10876155647763579,
+        "quaternionY": -0.4092661533881517,
+        "quaternionZ": 0.8719843344587899
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904378258000,
+      "values": {
+        "rotationRateX": -0.03728850185871124,
+        "rotationRateY": -0.022922201082110405,
+        "rotationRateZ": 0.027265729382634163,
+        "gravityX": -0.011478343047201633,
+        "gravityY": 0.7674434781074524,
+        "gravityZ": -0.6410138607025146,
+        "accelerationX": -0.04418572783470154,
+        "accelerationY": 0.04714697599411011,
+        "accelerationZ": 0.03310370445251465,
+        "quaternionW": 0.245454704793492,
+        "quaternionX": -0.10869154520073022,
+        "quaternionY": -0.40948654100248444,
+        "quaternionZ": 0.8719282300485827
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904388227000,
+      "values": {
+        "rotationRateX": -0.05126437544822693,
+        "rotationRateY": -0.021520845592021942,
+        "rotationRateZ": 0.023607077077031136,
+        "gravityX": -0.011445032432675362,
+        "gravityY": 0.7677637934684753,
+        "gravityZ": -0.6406307816505432,
+        "accelerationX": -0.038420677185058594,
+        "accelerationY": 0.014645874500274658,
+        "accelerationZ": 0.02672398090362549,
+        "quaternionW": 0.24526754042555934,
+        "quaternionX": -0.10869534356379312,
+        "quaternionY": -0.4097193193059273,
+        "quaternionZ": 0.8718711433107812
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904398197000,
+      "values": {
+        "rotationRateX": -0.02335657738149166,
+        "rotationRateY": 0.029370563104748726,
+        "rotationRateZ": 0.08396576344966888,
+        "gravityX": -0.010874816216528416,
+        "gravityY": 0.7679422497749329,
+        "gravityZ": -0.6404268145561218,
+        "accelerationX": -0.03934185206890106,
+        "accelerationY": -0.011182665824890137,
+        "accelerationZ": 0.026291072368621826,
+        "quaternionW": 0.24500922859411942,
+        "quaternionX": -0.10891758927178928,
+        "quaternionY": -0.40978477555559006,
+        "quaternionZ": 0.8718852879398311
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904408166000,
+      "values": {
+        "rotationRateX": -0.007934210821986198,
+        "rotationRateY": 0.05195736512541771,
+        "rotationRateZ": 0.10853848606348038,
+        "gravityX": -0.009787248447537422,
+        "gravityY": 0.7678680419921875,
+        "gravityZ": -0.6405332088470459,
+        "accelerationX": -0.039025627076625824,
+        "accelerationY": -0.007659971714019775,
+        "accelerationZ": 0.018890202045440674,
+        "quaternionW": 0.24466363882297845,
+        "quaternionX": -0.10931494394826809,
+        "quaternionY": -0.40961399531099435,
+        "quaternionZ": 0.8720127620714078
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904418136000,
+      "values": {
+        "rotationRateX": 0.013023002073168755,
+        "rotationRateY": 0.049649469554424286,
+        "rotationRateZ": 0.10591340810060501,
+        "gravityX": -0.008621444925665855,
+        "gravityY": 0.7677034735679626,
+        "gravityZ": -0.6407473087310791,
+        "accelerationX": -0.024886824190616608,
+        "accelerationY": 0.013561785221099854,
+        "accelerationZ": 0.011047601699829102,
+        "quaternionW": 0.24431406702700575,
+        "quaternionX": -0.1097313029863499,
+        "quaternionY": -0.40937192923351634,
+        "quaternionZ": 0.8721722587958582
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904428105200,
+      "values": {
+        "rotationRateX": -0.0193149633705616,
+        "rotationRateY": 0.038224510848522186,
+        "rotationRateZ": 0.08877409994602203,
+        "gravityX": -0.007654997054487467,
+        "gravityY": 0.7676282525062561,
+        "gravityZ": -0.6408497095108032,
+        "accelerationX": -0.007908947765827179,
+        "accelerationY": 0.017527997493743896,
+        "accelerationZ": 0.011363625526428223,
+        "quaternionW": 0.24400638483821782,
+        "quaternionX": -0.11008248350970758,
+        "quaternionY": -0.40921508780618854,
+        "quaternionZ": 0.8722876940637591
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904438075100,
+      "values": {
+        "rotationRateX": -0.074141725897789,
+        "rotationRateY": 0.017929356545209885,
+        "rotationRateZ": 0.08676740527153015,
+        "gravityX": -0.006920696701854467,
+        "gravityY": 0.7681207656860352,
+        "gravityZ": -0.6402676105499268,
+        "accelerationX": 0.004845512565225363,
+        "accelerationY": -0.004479408264160156,
+        "accelerationZ": 0.003030061721801758,
+        "quaternionW": 0.24366675728713785,
+        "quaternionX": -0.11042658345787935,
+        "quaternionY": -0.4094779151272317,
+        "quaternionZ": 0.8722157696438554
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904448044000,
+      "values": {
+        "rotationRateX": -0.08355473726987839,
+        "rotationRateY": 4.2445026338100433e-7,
+        "rotationRateZ": 0.09034616500139236,
+        "gravityX": -0.006288508418947458,
+        "gravityY": 0.7690289616584778,
+        "gravityZ": -0.639182984828949,
+        "accelerationX": 0.009706471115350723,
+        "accelerationY": -0.028046905994415283,
+        "accelerationZ": -0.005012571811676025,
+        "quaternionW": 0.24323386221454874,
+        "quaternionX": -0.11076869002793309,
+        "quaternionY": -0.4100473244165897,
+        "quaternionZ": 0.8720256613179123
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904458014000,
+      "values": {
+        "rotationRateX": -0.04983086138963699,
+        "rotationRateY": 0.0002182710450142622,
+        "rotationRateZ": 0.07720266282558441,
+        "gravityX": -0.005710072815418243,
+        "gravityY": 0.7697947025299072,
+        "gravityZ": -0.6382660865783691,
+        "accelerationX": 0.00888391025364399,
+        "accelerationY": -0.025272607803344727,
+        "accelerationZ": 0.0019440650939941406,
+        "quaternionW": 0.2428147152893168,
+        "quaternionX": -0.11105581026736909,
+        "quaternionY": -0.4105284025408861,
+        "quaternionZ": 0.8718796482188528
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904467983000,
+      "values": {
+        "rotationRateX": -0.012988356873393059,
+        "rotationRateY": 0.002009513322263956,
+        "rotationRateZ": 0.05722176283597946,
+        "gravityX": -0.005254561547189951,
+        "gravityY": 0.7701632976531982,
+        "gravityZ": -0.637825071811676,
+        "accelerationX": 0.0031946185044944286,
+        "accelerationY": 0.002602815628051758,
+        "accelerationZ": 0.0103684663772583,
+        "quaternionW": 0.2425100748433506,
+        "quaternionX": -0.11123974557669995,
+        "quaternionY": -0.4107470899113812,
+        "quaternionZ": 0.8718379055684904
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904477953000,
+      "values": {
+        "rotationRateX": 0.005898514296859503,
+        "rotationRateY": -0.007234318181872368,
+        "rotationRateZ": 0.042319245636463165,
+        "gravityX": -0.004999105352908373,
+        "gravityY": 0.7702677845954895,
+        "gravityZ": -0.6377009153366089,
+        "accelerationX": -0.00014313030987977982,
+        "accelerationY": 0.021312355995178223,
+        "accelerationZ": 0.012670457363128662,
+        "quaternionW": 0.24230276985399918,
+        "quaternionX": -0.11130208646168521,
+        "quaternionY": -0.4108057873150347,
+        "quaternionZ": 0.87185991264747
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904487922000,
+      "values": {
+        "rotationRateX": 0.04688975587487221,
+        "rotationRateY": -0.0029575482476502657,
+        "rotationRateZ": 0.03319738805294037,
+        "gravityX": -0.004902232903987169,
+        "gravityY": 0.7701717019081116,
+        "gravityZ": -0.6378176808357239,
+        "accelerationX": 0.0036662546917796135,
+        "accelerationY": 0.018127799034118652,
+        "accelerationZ": 0.012619435787200928,
+        "quaternionW": 0.24216469147609024,
+        "quaternionX": -0.11126635722453677,
+        "quaternionY": -0.4107443821991448,
+        "quaternionZ": 0.8719317555131659
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904497892000,
+      "values": {
+        "rotationRateX": 0.0720856562256813,
+        "rotationRateY": -0.0009702977258712053,
+        "rotationRateZ": 0.023430775851011276,
+        "gravityX": -0.004773187451064587,
+        "gravityY": 0.7699379920959473,
+        "gravityZ": -0.6381008625030518,
+        "accelerationX": 0.0035219844430685043,
+        "accelerationY": 0.0016531944274902344,
+        "accelerationZ": 0.012810945510864258,
+        "quaternionW": 0.24207676759391059,
+        "quaternionX": -0.11123960013780844,
+        "quaternionY": -0.4105792365890656,
+        "quaternionZ": 0.8720374816984192
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904507861200,
+      "values": {
+        "rotationRateX": 0.0952439084649086,
+        "rotationRateY": -0.0044348035007715225,
+        "rotationRateZ": 0.02785162441432476,
+        "gravityX": -0.004602887202054262,
+        "gravityY": 0.7695846557617188,
+        "gravityZ": -0.6385282874107361,
+        "accelerationX": 0.0021614995785057545,
+        "accelerationY": -0.01248931884765625,
+        "accelerationZ": 0.012734830379486084,
+        "quaternionW": 0.24200400114255946,
+        "quaternionX": -0.11121443010491726,
+        "quaternionY": -0.41032573246781523,
+        "quaternionZ": 0.8721802143400886
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904517831200,
+      "values": {
+        "rotationRateX": 0.05876579135656357,
+        "rotationRateY": -0.017321307212114334,
+        "rotationRateZ": 0.021246718242764473,
+        "gravityX": -0.004454583395272493,
+        "gravityY": 0.7690171599388123,
+        "gravityZ": -0.6392126083374023,
+        "accelerationX": -0.0016947095282375813,
+        "accelerationY": -0.0016526579856872559,
+        "accelerationZ": 0.011664390563964844,
+        "quaternionW": 0.24191418797973993,
+        "quaternionX": -0.11112040602182033,
+        "quaternionY": -0.40993406556498285,
+        "quaternionZ": 0.8724011946756983
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904527800000,
+      "values": {
+        "rotationRateX": 0.011502404697239399,
+        "rotationRateY": -0.0388159453868866,
+        "rotationRateZ": -0.017924919724464417,
+        "gravityX": -0.0045927055180072784,
+        "gravityY": 0.7684014439582825,
+        "gravityZ": -0.6399516463279724,
+        "accelerationX": 0.0048673623241484165,
+        "accelerationY": 0.02885502576828003,
+        "accelerationZ": 0.004072129726409912,
+        "quaternionW": 0.24189225936136835,
+        "quaternionX": -0.11089515225571563,
+        "quaternionY": -0.40954419653243546,
+        "quaternionZ": 0.8726190132649845
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904537770000,
+      "values": {
+        "rotationRateX": -0.029365666210651398,
+        "rotationRateY": -0.05201750248670578,
+        "rotationRateZ": -0.03935005143284798,
+        "gravityX": -0.005085107404738665,
+        "gravityY": 0.7681896090507507,
+        "gravityZ": -0.6402022242546082,
+        "accelerationX": 0.011997340247035027,
+        "accelerationY": 0.026579678058624268,
+        "accelerationZ": -0.004603683948516846,
+        "quaternionW": 0.24194875923391035,
+        "quaternionX": -0.11061128139058937,
+        "quaternionY": -0.4094679810691606,
+        "quaternionZ": 0.8726751467425702
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904547739100,
+      "values": {
+        "rotationRateX": -0.08281271159648895,
+        "rotationRateY": -0.07276539504528046,
+        "rotationRateZ": -0.0335100032389164,
+        "gravityX": -0.005766166374087334,
+        "gravityY": 0.7687951922416687,
+        "gravityZ": -0.6394690275192261,
+        "accelerationX": 0.010450609028339386,
+        "accelerationY": -0.021251916885375977,
+        "accelerationZ": -0.0014153122901916504,
+        "quaternionW": 0.2419244640689721,
+        "quaternionX": -0.11037692787318777,
+        "quaternionY": -0.4099785514607811,
+        "quaternionZ": 0.8724718113649801
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904557709000,
+      "values": {
+        "rotationRateX": -0.12055157124996185,
+        "rotationRateY": -0.05688229948282242,
+        "rotationRateZ": -0.028636418282985687,
+        "gravityX": -0.006382462102919817,
+        "gravityY": 0.7699262499809265,
+        "gravityZ": -0.6381009817123413,
+        "accelerationX": 0.010227670893073082,
+        "accelerationY": -0.047514140605926514,
+        "accelerationZ": -0.005697846412658691,
+        "quaternionW": 0.2418144670105463,
+        "quaternionX": -0.11025760691401,
+        "quaternionY": -0.41084398661110755,
+        "quaternionZ": 0.8721102450884496
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904567678000,
+      "values": {
+        "rotationRateX": -0.1434231996536255,
+        "rotationRateY": -0.029909536242485046,
+        "rotationRateZ": -0.03931489586830139,
+        "gravityX": -0.006881600245833397,
+        "gravityY": 0.7711384892463684,
+        "gravityZ": -0.6366302371025085,
+        "accelerationX": 0.0015562758781015873,
+        "accelerationY": -0.027562439441680908,
+        "accelerationZ": -0.006649792194366455,
+        "quaternionW": 0.24175811772143765,
+        "quaternionX": -0.11024498873404415,
+        "quaternionY": -0.4117413323127121,
+        "quaternionZ": 0.8717041065491403
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904577647900,
+      "values": {
+        "rotationRateX": -0.12646979093551636,
+        "rotationRateY": -0.029608335345983505,
+        "rotationRateZ": -0.0468180850148201,
+        "gravityX": -0.007360266987234354,
+        "gravityY": 0.7721696496009827,
+        "gravityZ": -0.6353737711906433,
+        "accelerationX": -0.011011325754225254,
+        "accelerationY": 0.009126067161560059,
+        "accelerationZ": -0.002016305923461914,
+        "quaternionW": 0.24179666218251475,
+        "quaternionX": -0.1102468512290883,
+        "quaternionY": -0.41250303281419104,
+        "quaternionZ": 0.8713330299164499
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904587617000,
+      "values": {
+        "rotationRateX": -0.05780097097158432,
+        "rotationRateY": -0.04805924743413925,
+        "rotationRateZ": -0.03381307050585747,
+        "gravityX": -0.007895075716078281,
+        "gravityY": 0.7727274298667908,
+        "gravityZ": -0.6346888542175293,
+        "accelerationX": -0.010339189320802689,
+        "accelerationY": 0.01938682794570923,
+        "accelerationZ": 0.003158092498779297,
+        "quaternionW": 0.24183944271324245,
+        "quaternionX": -0.11011171776016955,
+        "quaternionY": -0.4129539833208013,
+        "quaternionZ": 0.8711245767297209
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904597587200,
+      "values": {
+        "rotationRateX": -0.02986760437488556,
+        "rotationRateY": -0.05201856791973114,
+        "rotationRateZ": -0.03315979987382889,
+        "gravityX": -0.008439632132649422,
+        "gravityY": 0.7730017900466919,
+        "gravityZ": -0.6343477368354797,
+        "accelerationX": 0.001405349001288414,
+        "accelerationY": 0.0041283369064331055,
+        "accelerationZ": 0.016671955585479736,
+        "quaternionW": 0.24184933671119976,
+        "quaternionX": -0.10989021648618544,
+        "quaternionY": -0.41321939432314997,
+        "quaternionZ": 0.8710240401645071
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904607556000,
+      "values": {
+        "rotationRateX": -0.05866609513759613,
+        "rotationRateY": -0.04323573037981987,
+        "rotationRateZ": -0.040114909410476685,
+        "gravityX": -0.008981870487332344,
+        "gravityY": 0.7735152244567871,
+        "gravityZ": -0.6337141394615173,
+        "accelerationX": 0.004404251463711262,
+        "accelerationY": 0.00863504409790039,
+        "accelerationZ": 0.013001859188079834,
+        "quaternionW": 0.24184991211942433,
+        "quaternionX": -0.10972101441105095,
+        "quaternionY": -0.4136474689328293,
+        "quaternionZ": 0.8708420095013001
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904617526000,
+      "values": {
+        "rotationRateX": -0.11606387794017792,
+        "rotationRateY": -0.013497008010745049,
+        "rotationRateZ": -0.04213172197341919,
+        "gravityX": -0.00939429085701704,
+        "gravityY": 0.7741263508796692,
+        "gravityZ": -0.6329613924026489,
+        "accelerationX": -0.002965344116091728,
+        "accelerationY": 0.01394432783126831,
+        "accelerationZ": -0.0006903409957885742,
+        "quaternionW": 0.2418985547666503,
+        "quaternionX": -0.1096665719291603,
+        "quaternionY": -0.41411659620104,
+        "quaternionZ": 0.870612247817309
+      }
+    },
+    {
+      "name": "wrist motion",
+      "time": 1765049904627495200,
+      "values": {
+        "rotationRateX": -0.2180846482515335,
+        "rotationRateY": -0.017986832186579704,
+        "rotationRateZ": -0.03363144397735596,
+        "gravityX": -0.009738700464367867,
+        "gravityY": 0.7747748494148254,
+        "gravityZ": -0.6321622729301453,
+        "accelerationX": -0.007045973092317581,
+        "accelerationY": -0.011469244956970215,
+        "accelerationZ": -0.005334675312042236,
+        "quaternionW": 0.24197513141394808,
+        "quaternionX": -0.10967050341641678,
+        "quaternionY": -0.4145977030146956,
+        "quaternionZ": 0.8703614971940403
+      }
+    }
+  ]
+}
