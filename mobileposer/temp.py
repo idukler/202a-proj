@@ -25,10 +25,8 @@ from mobileposer.utils.model_utils import *
 from pygame_visualizer import PoseVisualizer
 from mobileposer.extract_joint_angles import extract_poses_from_pose_tran
 
-import websocket
-import json
+import requests
 
-ws = websocket.create_connection("ws://localhost:4000/joint-angles")
 
 
 # Configurations
@@ -318,11 +316,16 @@ if __name__ == "__main__":
             joint_metrics = extract_poses_from_pose_tran(pose, tran)
             print("Joint metrics:", joint_metrics)
             
-            # Send the data using websockets to port 4000/joint-angles
             try:
-                ws.send(json.dumps(joint_metrics))
-            except:
-                pass
+                response = requests.post(
+                    "http://localhost:4000/joint-angles",
+                    json=joint_metrics,
+                    timeout=1.0,  # optional
+                    proxies={"http": None, "https": None}, 
+                )
+            except Exception as e:
+                print("Error sending joint metrics:", e)
+
         except Exception as e:
             print("Error computing joint metrics:", e)
 
