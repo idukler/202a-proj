@@ -23,6 +23,10 @@ from mobileposer.config import paths
 import mobileposer.articulate as art
 
 
+_SINGLE_FRAME_BODYMODEL = None
+_SINGLE_FRAME_DEVICE = torch.device("cpu")
+
+
 # SMPL joint indices (from pygame_visualizer.py)
 JOINT_NAMES = [
     'Pelvis', 'L_Hip', 'R_Hip', 'Spine1', 'L_Knee', 'R_Knee', 'Spine2', 
@@ -395,6 +399,52 @@ def calculate_symmetry(left, right):
     diff = abs(left - right)
     symmetry = max(0.0, 100.0 - (diff / avg) * 100.0)
     return round(symmetry, 1)
+
+
+def extract_poses_from_pose_tran(pose, tran):
+    """Compute joint angle metrics from a single SMPL pose and translation.
+
+    Args:
+        pose: [72] axis-angle tensor or array
+        tran: [3] or [1, 3] translation tensor or array
+
+    Returns:
+        dict with the same joint angle structure as produced per frame in
+        extract_poses_from_pt_file (including symmetry fields).
+    """
+    global _SINGLE_FRAME_BODYMODEL
+
+    if _SINGLE_FRAME_BODYMODEL is None:
+        smpl_file = paths.smpl_file
+        if not os.path.exists(smpl_file):
+            smpl_file = Path(__file__).parent / "smpl" / "basicmodel_m.pkl"
+        _SINGLE_FRAME_BODYMODEL = art.model.ParametricModel(str(smpl_file), device=_SINGLE_FRAME_DEVICE)
+
+    if not isinstance(pose, torch.Tensor):
+        pose = torch.tensor(pose, dtype=torch.float32)
+    pose = pose.to(_SINGLE_FRAME_DEVICE).float().view(24, 3)
+
+    pose_rot = art.math.axis_angle_to_rotation_matrix(pose)
+    pose_rot_batch = pose_rot.unsqueeze(0).contiguous()
+
+    if isinstance(tran, torch.Tensor):
+        tran = tran.to(_SINGLE_FRAME_DEVICE).float()
+    else:
+        tran = torch.tensor(tran, dtype=torch.float32, device=_SINGLE_FRAME_DEVICE)
+
+    if tran.dim() == 1:
+        tran_batch = tran.view(1, 3)
+    else:
+        tran_batch = tran
+
+    _, joint_positions = _SINGLE_FRAME_BODYMODEL.forward_kinematics(pose_rot_batch, shape=None, tran=tran_batch)
+    joint_positions = joint_positions[0]
+
+    joint_angles = calculate_joint_angles(joint_positions, prev_pelvis_pos=None)
+    joint_angles["elbow"]["symmetry"] = calculate_symmetry(joint_angles["elbow"]["left"], joint_angles["elbow"]["right"])
+    joint_angles["knee"]["symmetry"] = calculate_symmetry(joint_angles["knee"]["left"], joint_angles["knee"]["right"])
+
+    return joint_angles
 
 
 def extract_poses_from_pt_file(pt_file_path):

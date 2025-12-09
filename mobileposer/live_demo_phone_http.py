@@ -23,6 +23,7 @@ from mobileposer.config import *
 from mobileposer.models import *
 from mobileposer.utils.model_utils import *
 from pygame_visualizer import PoseVisualizer
+from mobileposer.extract_joint_angles import extract_poses_from_pose_tran
 
 
 # Configurations
@@ -61,15 +62,17 @@ class PhoneIMUSet:
     def _setup_routes(self):
         @self._app.route("/data", methods=["POST"])
         def receive_data():
-            try:
-                data = request.get_json()
+            data = request.get_json()
                 
-                # print("Received data:", data)
+            # print("Received data:", data)
 
-                quat = None
-                acc = None
-                quat_wrist = None
-                acc_wrist = None
+            quat = None
+            acc = None
+            # quat_wrist = None
+            # acc_wrist = None
+            
+            try:
+               
             
 
                 if data and "payload" in data and len(data["payload"]) > 0:
@@ -306,14 +309,21 @@ if __name__ == "__main__":
         pose = rotation_matrix_to_axis_angle(pred_pose.view(1, 216)).view(72)
         tran = pred_tran
 
+        # Compute joint angle metrics from current pose/translation
+        try:
+            joint_metrics = extract_poses_from_pose_tran(pose, tran)
+            print("Joint metrics:", joint_metrics)
+        except Exception as e:
+            print("Error computing joint metrics:", e)
+
         if args.save:
             actual_poses.append(pose.cpu())
-            # accs_list.append(glb_acc)
-            # oris_list.append(glb_ori)
-            # raw_accs.append(acc_raw)
-            # raw_oris.append(ori_raw)
-            # poses.append(pred_pose)
-            # trans.append(pred_tran)
+            accs_list.append(glb_acc)
+            oris_list.append(glb_ori)
+            raw_accs.append(acc_raw)
+            raw_oris.append(ori_raw)
+            poses.append(pred_pose)
+            trans.append(pred_tran)
 
         if args.vis:
             if not visualizer.handle_events():
