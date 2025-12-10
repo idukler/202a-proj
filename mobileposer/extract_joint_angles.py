@@ -26,6 +26,9 @@ import mobileposer.articulate as art
 _SINGLE_FRAME_BODYMODEL = None
 _SINGLE_FRAME_DEVICE = torch.device("cpu")
 
+# Global array to accumulate joint angle data during live session
+_LIVE_SESSION_DATA = []
+
 
 # SMPL joint indices (from pygame_visualizer.py)
 JOINT_NAMES = [
@@ -401,18 +404,97 @@ def calculate_symmetry(left, right):
     return round(symmetry, 1)
 
 
-def extract_poses_from_pose_tran(pose, tran):
+def calculate_averages_from_live_data():
+    """Calculate average joint angles from accumulated live session data.
+    
+    Returns:
+        dict with average joint angles in the same format as extract_poses_from_pt_file,
+        or None if no data has been accumulated.
+    """
+    global _LIVE_SESSION_DATA
+    
+    if len(_LIVE_SESSION_DATA) == 0:
+        return None
+    
+    # Calculate averages
+    avg_front_knee = np.mean([m['frontKnee']['angle'] for m in _LIVE_SESSION_DATA])
+    avg_back_knee = np.mean([m['backKnee']['angle'] for m in _LIVE_SESSION_DATA])
+    avg_back_to_head = np.mean([m['backToHead']['angle'] for m in _LIVE_SESSION_DATA])
+    avg_spine_curvature = np.mean([m['backToHead']['spineCurvature'] for m in _LIVE_SESSION_DATA])
+    avg_elbow_left = np.mean([m['elbow']['left'] for m in _LIVE_SESSION_DATA])
+    avg_elbow_right = np.mean([m['elbow']['right'] for m in _LIVE_SESSION_DATA])
+    avg_knee_left = np.mean([m['knee']['left'] for m in _LIVE_SESSION_DATA])
+    avg_knee_right = np.mean([m['knee']['right'] for m in _LIVE_SESSION_DATA])
+    
+    # Calculate min/max for front and back knee
+    front_knee_angles = [m['frontKnee']['angle'] for m in _LIVE_SESSION_DATA]
+    back_knee_angles = [m['backKnee']['angle'] for m in _LIVE_SESSION_DATA]
+    min_front_knee = np.min(front_knee_angles)
+    max_front_knee = np.max(front_knee_angles)
+    min_back_knee = np.min(back_knee_angles)
+    max_back_knee = np.max(back_knee_angles)
+    
+    # Determine most common front/back side
+    front_sides = [m['frontKnee']['side'] for m in _LIVE_SESSION_DATA]
+    most_common_front = max(set(front_sides), key=front_sides.count)
+    back_sides = [m['backKnee']['side'] for m in _LIVE_SESSION_DATA]
+    most_common_back = max(set(back_sides), key=back_sides.count)
+    
+    # Create average data structure matching the format expected by frontend
+    average_data = {
+        'jointAngles': {
+            'frontKnee': {
+                'angle': float(avg_front_knee),
+                'min': float(min_front_knee),
+                'max': float(max_front_knee),
+                'side': most_common_front
+            },
+            'backKnee': {
+                'angle': float(avg_back_knee),
+                'min': float(min_back_knee),
+                'max': float(max_back_knee),
+                'side': most_common_back
+            },
+            'backToHead': {
+                'angle': float(avg_back_to_head),
+                'spineCurvature': float(avg_spine_curvature)
+            },
+            'elbow': {
+                'left': float(avg_elbow_left),
+                'right': float(avg_elbow_right),
+                'symmetry': calculate_symmetry(avg_elbow_left, avg_elbow_right)
+            },
+            'knee': {
+                'left': float(avg_knee_left),
+                'right': float(avg_knee_right),
+                'symmetry': calculate_symmetry(avg_knee_left, avg_knee_right)
+            }
+        },
+        'totalFrames': len(_LIVE_SESSION_DATA)
+    }
+    
+    return average_data
+
+
+def reset_live_session_data():
+    """Reset the accumulated live session data."""
+    global _LIVE_SESSION_DATA
+    _LIVE_SESSION_DATA = []
+
+def extract_poses_from_pose_tran(pose, tran, prev_pelvis_pos=None, accumulate_data=True):
     """Compute joint angle metrics from a single SMPL pose and translation.
 
     Args:
         pose: [72] axis-angle tensor or array
         tran: [3] or [1, 3] translation tensor or array
+        prev_pelvis_pos: Previous frame's pelvis position [3] (optional, for velocity-based front/back detection)
+        accumulate_data: If True, accumulate this frame's data to global _LIVE_SESSION_DATA array
 
     Returns:
         dict with the same joint angle structure as produced per frame in
         extract_poses_from_pt_file (including symmetry fields).
     """
-    global _SINGLE_FRAME_BODYMODEL
+    global _SINGLE_FRAME_BODYMODEL, _LIVE_SESSION_DATA
 
     if _SINGLE_FRAME_BODYMODEL is None:
         smpl_file = paths.smpl_file
@@ -439,10 +521,21 @@ def extract_poses_from_pose_tran(pose, tran):
 
     _, joint_positions = _SINGLE_FRAME_BODYMODEL.forward_kinematics(pose_rot_batch, shape=None, tran=tran_batch)
     joint_positions = joint_positions[0]
+    
+    # Get current pelvis position for next frame's velocity-based detection
+    current_pelvis_pos = joint_positions[PELVIS]
 
-    joint_angles = calculate_joint_angles(joint_positions, prev_pelvis_pos=None)
+    # Calculate joint angles with previous pelvis position for velocity-based detection
+    joint_angles = calculate_joint_angles(joint_positions, prev_pelvis_pos=prev_pelvis_pos)
     joint_angles["elbow"]["symmetry"] = calculate_symmetry(joint_angles["elbow"]["left"], joint_angles["elbow"]["right"])
     joint_angles["knee"]["symmetry"] = calculate_symmetry(joint_angles["knee"]["left"], joint_angles["knee"]["right"])
+
+    # Accumulate data if requested (store clean copy without tracking fields)
+    if accumulate_data:
+        _LIVE_SESSION_DATA.append(joint_angles.copy())
+    
+    # Add current pelvis position to return value for tracking (but don't accumulate it)
+    joint_angles["_pelvis_pos"] = current_pelvis_pos.cpu().numpy().tolist() if isinstance(current_pelvis_pos, torch.Tensor) else current_pelvis_pos
 
     return joint_angles
 
