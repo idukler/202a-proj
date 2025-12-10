@@ -9,12 +9,13 @@ Close structural match to live_demo_orig.py, but:
 import os
 import time
 import threading
+import json
 from argparse import ArgumentParser
 from datetime import datetime
 
 import numpy as np
 import torch
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from pygame.time import Clock
 from threading import Lock
 
@@ -23,7 +24,7 @@ from mobileposer.config import *
 from mobileposer.models import *
 from mobileposer.utils.model_utils import *
 from pygame_visualizer import PoseVisualizer
-from mobileposer.extract_joint_angles import extract_poses_from_pose_tran
+from mobileposer.extract_joint_angles import extract_poses_from_pose_tran, calculate_averages_from_live_data, reset_live_session_data, calculate_symmetry
 
 import requests
 
@@ -261,6 +262,11 @@ if __name__ == "__main__":
     poses, trans = [], []
     
     actual_poses = []
+    
+    # Track previous pelvis position for velocity-based front/back detection
+    prev_pelvis_pos = None
+    # Reset live session data at start
+    reset_live_session_data()
 
     while running:
         clock.tick(datasets.fps)
@@ -312,14 +318,27 @@ if __name__ == "__main__":
 
         # Compute joint angle metrics from current pose/translation
         try:
-            print("try")
-            joint_metrics = extract_poses_from_pose_tran(pose, tran)
-            print("Joint metrics:", joint_metrics)
+            # Convert prev_pelvis_pos to tensor if it's a list/numpy array
+            if prev_pelvis_pos is not None and not isinstance(prev_pelvis_pos, torch.Tensor):
+                prev_pelvis_pos = torch.tensor(prev_pelvis_pos, dtype=torch.float32)
+            
+            # Extract joint metrics with velocity-based detection and data accumulation
+            joint_metrics = extract_poses_from_pose_tran(pose, tran, prev_pelvis_pos=prev_pelvis_pos, accumulate_data=True)
+            
+            # Update previous pelvis position for next frame (remove _pelvis_pos from metrics before sending)
+            if "_pelvis_pos" in joint_metrics:
+                prev_pelvis_pos = torch.tensor(joint_metrics["_pelvis_pos"], dtype=torch.float32)
+                # Create a copy without the internal tracking field for sending to frontend
+                metrics_to_send = {k: v for k, v in joint_metrics.items() if k != "_pelvis_pos"}
+            else:
+                metrics_to_send = joint_metrics
+            
+            print("Joint metrics:", metrics_to_send)
             
             try:
                 response = requests.post(
                     "http://localhost:4000/joint-angles",
-                    json=joint_metrics,
+                    json=metrics_to_send,
                     timeout=1.0,  # optional
                     proxies={"http": None, "https": None}, 
                 )
@@ -362,6 +381,40 @@ if __name__ == "__main__":
             "actual_poses": torch.stack(actual_poses, dim=0)
         }
         torch.save(data, f"phone_dev_{int(time.time())}.pt")
+
+    # Calculate average joint angles when session ends
+    average_data = calculate_averages_from_live_data()
+    if average_data is not None:
+        print(f"\nCalculating average joint angles from {average_data['totalFrames']} frames...")
+        
+        # Add session end time
+        from datetime import datetime
+        average_data['sessionEndTime'] = datetime.now().isoformat()
+        
+        # Save to JSON file
+        output_file = f"live_session_averages_{int(time.time())}.json"
+        with open(output_file, 'w') as f:
+            json.dump(average_data, f, indent=2)
+        print(f"✓ Average joint angles saved to {output_file}")
+        
+        # Also save to a fixed filename for easy frontend access
+        fixed_output_file = "latest_session_averages.json"
+        with open(fixed_output_file, 'w') as f:
+            json.dump(average_data, f, indent=2)
+        print(f"✓ Also saved to {fixed_output_file} for frontend access")
+        
+        # Print summary
+    #     print(f"\nSession Summary:")
+    #     print(f"  - Total frames: {average_data['totalFrames']}")
+    #     print(f"  - Front knee angle: {average_data['jointAngles']['frontKnee']['angle']:.1f}°")
+    #     print(f"    → Range: {average_data['jointAngles']['frontKnee']['min']:.1f}° - {average_data['jointAngles']['frontKnee']['max']:.1f}°")
+    #     print(f"  - Back knee angle: {average_data['jointAngles']['backKnee']['angle']:.1f}°")
+    #     print(f"    → Range: {average_data['jointAngles']['backKnee']['min']:.1f}° - {average_data['jointAngles']['backKnee']['max']:.1f}°")
+    #     print(f"  - Back to head angle: {average_data['jointAngles']['backToHead']['angle']:.1f}°")
+    #     print(f"  - Elbow angles: L={average_data['jointAngles']['elbow']['left']:.1f}°, R={average_data['jointAngles']['elbow']['right']:.1f}°")
+    #     print(f"  - Elbow symmetry: {average_data['jointAngles']['elbow']['symmetry']:.1f}%")
+    # else:
+    #     print("\nNo joint angle data accumulated during this session.")
 
     if args.vis:
         visualizer.close()
