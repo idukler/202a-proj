@@ -1,3 +1,8 @@
+# SymStride: An AI running coach that lives in your pocket.
+
+### SymStride aids runners to better their running techinque through real-time feedback using only the sensors from the devices you already own. This work builds upon MobilePoser, an on-body pose estimation system that the SpiceLab of UChicago developed.
+
+
 # MobilePoser: Real-Time Full-Body Pose Estimation and 3D Human Translation from IMUs in Mobile Consumer Devices
 Author's implementation of the paper [MobilePoser: Real-Time Full-Body Pose Estimation and 3D Human Translation from IMUs in Mobile Consumer Devices](https://dl.acm.org/doi/pdf/10.1145/3654777.3676461). This work was published at UIST'24.
 

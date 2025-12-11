@@ -1,266 +1,434 @@
 """
-Modified live_demo.py for phone IMU data
-Changes: Replace IMUSet with PhoneIMUBuffer, remove calibration
+HTTP phone IMU live demo for MobilePoser.
+
+Close structural match to live_demo_orig.py, but:
+- Uses PhoneIMUSet (HTTP) instead of UDP IMUSet.
+- Uses PyGame PoseVisualizer instead of Unity/Socket.
 """
 
 import os
 import time
-import socket
 import threading
-import torch
-import numpy as np
+import json
 from argparse import ArgumentParser
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-import pygame
+from datetime import datetime
+
+import numpy as np
+import torch
+from flask import Flask, request, jsonify
 from pygame.time import Clock
+from threading import Lock
 
 from articulate.math import *
+from mobileposer.config import *
 from mobileposer.models import *
 from mobileposer.utils.model_utils import *
-from mobileposer.config import *
+from mobileposer.extract_joint_angles import extract_poses_from_pose_tran, calculate_averages_from_live_data, reset_live_session_data, calculate_symmetry
 
-# Import phone receiver
-from phone_imu_receiver import phone_buffer, start_server
+import requests
+
+
+
+# Configurations
+USE_PHONE_AS_WATCH = False
+global GLOBAL_COUNT
+# GLOBAL_COUNT = 0
+
+class PhoneIMUSet:
+    """HTTP-based IMU receiver.
+
+    Exposes the same interface as IMUSet in live_demo_orig.py:
+    - start_reading / stop_reading
+    - get_current_buffer
+    - get_mean_measurement_of_n_second
+
+    Each HTTP POST to /data should contain a JSON body with a "payload" list
+    including entries named "orientation" (quaternion) and "accelerometer".
+    The single phone IMU is tiled to 5 IMU slots to match the original demo.
+    """
+
+    def __init__(self, imu_host: str = "0.0.0.0", imu_port: int = 8000, buffer_len: int = 26):
+        self.imu_host = imu_host
+        self.imu_port = imu_port
+        self.clock = Clock()
+
+        self._buffer_len = buffer_len
+        self._quat_buffer = []  # list of [5,4]
+        self._acc_buffer = []   # list of [5,3]
+        self._is_reading = False
+        self._read_thread = None
+        self._lock = Lock()
+
+        self._app = Flask(__name__)
+        self._setup_routes()
+
+    def _setup_routes(self):
+        @self._app.route("/data", methods=["POST"])
+        def receive_data():
+            try:
+                data = request.get_json()
+                
+                # print("Received data:", data)
+
+                quat = None
+                acc = None
+                quat_wrist = None
+                acc_wrist = None
+            
+
+                if data and "payload" in data and len(data["payload"]) > 0:
+                    # count = len(data["payload"])
+                    # print(f"=============== Global Count: {GLOBAL_COUNT} ===================")
+                    
+                    # Search from newest to oldest
+                    for item in reversed(data["payload"]):
+                        name = item.get("name")
+                        values = item.get("values", {})
+
+                        if name == "orientation" and quat is None:
+                            # Expect phone to send quaternion as qx,qy,qz,qw
+                            # quaternion_to_rotation_matrix expects w,x,y,z
+                            qw = values.get("qw")
+                            qx = values.get("qx")
+                            qy = values.get("qy")
+                            qz = values.get("qz")
+                            if None not in (qw, qx, qy, qz):
+                                quat = np.array([qw, qx, qy, qz], dtype=np.float32)
+
+                        elif name == "accelerometer" and acc is None:
+                            ax = values.get("x")
+                            ay = values.get("y")
+                            az = values.get("z")
+                            if None not in (ax, ay, az):
+                                acc = np.array([ax, ay, az], dtype=np.float32)
+                          
+                        # elif name == "wrist motion" and acc_wrist is None and quat_wrist is None:
+                        #     # Handle write motion data if needed
+                        #     print("Received wrist motion data:", values)
+
+                        if quat is not None and acc is not None:
+                            break
+                        
+                        
+                        # GLOBAL_COUNT += 1
+
+
+                if quat is not None and acc is not None:
+                    # Match original IMUSet format: [5,4] quats, [5,3] accs.
+                    # Simple version: tile the single phone IMU to all 5 slots.
+                    # quat_full = np.tile((quat), (5, 1))               # [5,4]
+                    # acc_full = np.tile(acc, (5, 1)) * -9.8          # [5,3]
+                    # Match original IMUSet format: [5,4] quats, [5,3] accs.
+                    quat_full = np.zeros((5, 4), dtype=np.float32)
+                    acc_full  = np.zeros((5, 3), dtype=np.float32)
+
+                    # Set all IMUs to identity rotation (w=1,x=y=z=0)
+                    quat_full[:, 0] = 1.0  # w component
+
+                    # Put real phone data in the rp slot (index 3)
+                    rp_index = 0
+                    quat_full[rp_index, :] = quat.astype(np.float32)
+                    acc_full[rp_index, :]  = (acc * -9.8).astype(np.float32)
+
+                    with self._lock:
+                        tranc = int(len(self._quat_buffer) == self._buffer_len)
+                        self._quat_buffer = self._quat_buffer[tranc:] + [quat_full]
+                        self._acc_buffer = self._acc_buffer[tranc:] + [acc_full]
+                        self.clock.tick()
+
+                return {"status": "ok"}, 200
+            except Exception as e:
+                print(f"Error processing data: {e}")
+                return {"status": "error", "message": str(e)}, 400
+
+    def _run_server(self):
+        self._app.run(host=self.imu_host, port=self.imu_port, debug=False, threaded=True)
+
+    def start_reading(self):
+        if self._read_thread is None:
+            self._is_reading = True
+            self._read_thread = threading.Thread(target=self._run_server)
+            self._read_thread.setDaemon(True)
+            with self._lock:
+                self._quat_buffer = []
+                self._acc_buffer = []
+            self._read_thread.start()
+            print(f"HTTP server started on http://{self.imu_host}:{self.imu_port}/data")
+        else:
+            print("Failed to start reading thread: reading is already started.")
+
+    def stop_reading(self):
+        if self._read_thread is not None:
+            self._is_reading = False
+            # Flask dev server will exit with main process; nothing graceful here
+            self._read_thread = None
+
+    def get_current_buffer(self):
+        with self._lock:
+            q = torch.from_numpy(np.array(self._quat_buffer)).float()
+            a = torch.from_numpy(np.array(self._acc_buffer)).float()
+        return q, a
+
+    def get_mean_measurement_of_n_second(self, num_seconds: int = 3, buffer_len: int = 120):
+        save_buffer_len = self._buffer_len
+        self._buffer_len = buffer_len
+        with self._lock:
+            self._quat_buffer = []
+            self._acc_buffer = []
+        if self._read_thread is None:
+            self.start_reading()
+        time.sleep(num_seconds)
+        q, a = self.get_current_buffer()
+        self._buffer_len = save_buffer_len
+        return q.mean(dim=0), a.mean(dim=0)
+
 
 def get_input():
-    global running
+    global running, start_recording
     while running:
         c = input()
-        if c == 'q':
+        if c == "q":
             running = False
+        elif c == "r":
+            start_recording = True
+        elif c == "s":
+            start_recording = False
 
-def visualize_pose_pygame(pose, tran, screen, font):
-    """
-    Visualize pose using PyGame - same logic as Unity visualization
-    Receives pose (72 axis-angle) and translation (3) and displays them
-    
-    Args:
-        pose: [72] axis-angle representation of 24 joints
-        tran: [3] global translation
-        screen: pygame screen object
-        font: pygame font object
-    """
-    # SMPL skeleton hierarchy (parent joint indices)
-    parents = [-1, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9, 12, 13, 14, 16, 17, 18, 19, 20, 21]
-    
-    # Joint names for reference
-    joint_names = [
-        'Pelvis', 'L_Hip', 'R_Hip', 'Spine1', 'L_Knee', 'R_Knee', 'Spine2', 'L_Ankle', 'R_Ankle',
-        'Spine3', 'L_Foot', 'R_Foot', 'Neck', 'L_Collar', 'R_Collar', 'Head',
-        'L_Shoulder', 'R_Shoulder', 'L_Elbow', 'R_Elbow', 'L_Wrist', 'R_Wrist', 'L_Hand', 'R_Hand'
-    ]
-    
-    # SMPL bone lengths (approximate, in meters)
-    bone_lengths = [
-        0.0, 0.1, 0.1, 0.1, 0.4, 0.4, 0.1, 0.4, 0.4, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.15,
-        0.15, 0.15, 0.3, 0.3, 0.25, 0.25, 0.1, 0.1
-    ]
-    
-    # Convert pose from axis-angle to rotation matrices for FK
-    pose_aa = pose.view(24, 3)
-    
-    # Compute forward kinematics to get joint positions
-    joint_positions = torch.zeros(24, 3)
-    joint_rotations = []
-    
-    for i in range(24):
-        # Get rotation for this joint
-        aa = pose_aa[i]
-        angle = torch.norm(aa)
-        if angle > 1e-8:
-            axis = aa / angle
-            # Rodrigues formula to convert axis-angle to rotation matrix
-            K = torch.tensor([
-                [0, -axis[2], axis[1]],
-                [axis[2], 0, -axis[0]],
-                [-axis[1], axis[0], 0]
-            ])
-            R = torch.eye(3) + torch.sin(angle) * K + (1 - torch.cos(angle)) * K @ K
-        else:
-            R = torch.eye(3)
-        joint_rotations.append(R)
-        
-        # Compute position using parent's position and rotation
-        if parents[i] == -1:
-            joint_positions[i] = tran
-        else:
-            parent_idx = parents[i]
-            # Direction from parent to child (simplified - along Y axis)
-            offset = torch.tensor([0.0, bone_lengths[i], 0.0])
-            # Rotate offset by parent's rotation
-            rotated_offset = joint_rotations[parent_idx] @ offset
-            joint_positions[i] = joint_positions[parent_idx] + rotated_offset
-    
-    # Clear screen
-    screen.fill((20, 20, 30))
-    
-    # Projection settings
-    screen_w, screen_h = screen.get_size()
-    scale = 150  # pixels per meter
-    center_x = screen_w // 2
-    center_y = screen_h - 100  # Bottom offset
-    
-    def project(pos):
-        """Project 3D position to 2D screen (front view)"""
-        x = int(center_x + pos[0].item() * scale)
-        y = int(center_y - pos[1].item() * scale)  # Flip Y
-        return (x, y)
-    
-    # Draw bones (connections)
-    for i in range(24):
-        if parents[i] != -1:
-            p1 = project(joint_positions[parents[i]])
-            p2 = project(joint_positions[i])
-            
-            # Color code: blue for left, red for right, white for center
-            if 'L_' in joint_names[i]:
-                color = (100, 150, 255)
-            elif 'R_' in joint_names[i]:
-                color = (255, 100, 100)
-            else:
-                color = (200, 200, 200)
-            
-            pygame.draw.line(screen, color, p1, p2, 3)
-    
-    # Draw joints
-    for i in range(24):
-        pos = project(joint_positions[i])
-        if i == 0:  # Pelvis
-            color = (255, 255, 0)
-            radius = 8
-        elif i == 15:  # Head
-            color = (255, 200, 100)
-            radius = 10
-        else:
-            color = (150, 255, 150)
-            radius = 5
-        
-        pygame.draw.circle(screen, color, pos, radius)
-        pygame.draw.circle(screen, (255, 255, 255), pos, radius, 1)
-    
-    # Display info
-    fps_text = font.render(f'FPS: {pygame.time.Clock().get_fps():.1f}', True, (0, 255, 0))
-    screen.blit(fps_text, (10, 10))
-    
-    tran_text = font.render(f'Translation: ({tran[0]:.2f}, {tran[1]:.2f}, {tran[2]:.2f})', True, (200, 200, 200))
-    screen.blit(tran_text, (10, 40))
-    
-    info_text = font.render('Press Q to quit', True, (150, 150, 150))
-    screen.blit(info_text, (10, screen_h - 30))
-    
-    pygame.display.flip()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--vis", action='store_true')
-    parser.add_argument("--save", action='store_true')
+    parser.add_argument("--vis", action="store_true")
+    parser.add_argument("--save", action="store_true")
     args = parser.parse_args()
-    
-    # Start HTTP server in background thread
-    server_thread = threading.Thread(target=start_server, daemon=True)
-    server_thread.start()
-    print("HTTP server started on http://0.0.0.0:8000/data")
-    print("Waiting for phone data...")
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    # IMU collection (HTTP)
+    imu_set = PhoneIMUSet(buffer_len=1)
+    imu_set.start_reading()
+    print("Waiting for phone to send data...")
+    while len(imu_set._quat_buffer) == 0:
+        time.sleep(0.1)
+    print("Receiving data from phone!")
+
+    # Calibration 1: align IMU to SMPL body frame
+    input("Put phone aligned with your body reference frame (x = Left, y = Up, z = Forward) and then press any key.")
+    print("Capturing data for 3 seconds...")
     time.sleep(2)
-    
-    # Specify device
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    
-    # Load model
+    if len(imu_set._quat_buffer) == 0:
+        print("ERROR: No data received. Check phone connection.")
+        exit(1)
+    oris = imu_set.get_mean_measurement_of_n_second(num_seconds=3, buffer_len=40)[0][0]
+    smpl2imu = quaternion_to_rotation_matrix(oris).view(3, 3).t()
+    input("Data collected! Press any key to continue to T-pose calibration.")
+
+    # Calibration 2: bone and acceleration offsets
+    input("\tFinish.\nKeep phone in right pocket and press any key.")
+    for i in range(3, 0, -1):
+        print("\rStand straight in T-pose and be ready. The calibration will begin after %d seconds." % i, end="")
+        time.sleep(1)
+    print("\nStand straight in T-pose. Keep the pose for 3 seconds ...", end="")
+
+    oris, accs = imu_set.get_mean_measurement_of_n_second(num_seconds=3, buffer_len=40)
+    oris = quaternion_to_rotation_matrix(oris)
+    device2bone = smpl2imu.matmul(oris).transpose(1, 2).matmul(torch.eye(3))
+    acc_offsets = smpl2imu.matmul(accs.unsqueeze(-1))  # [num_imus, 3, 1]
+
+    print("\tFinished Calibrating.\nEstimating poses. Press q to quit")
+
+    # Model
     model = load_model(paths.weights_file)
-    
-    # Setup PyGame visualization
-    print("$$$$$$")
+    model.eval()
+
+    # Visualization
     if args.vis:
-        print("$$$$$$")
-        pygame.init()
-        screen = pygame.display.set_mode((800, 600))
-        pygame.display.set_caption('MobilePoser - Real-time Pose Visualization')
-        font = pygame.font.Font(None, 30)
-        print('PyGame visualization initialized.')
-    
+        visualizer = PoseVisualizer()
+
+    global running, start_recording
     running = True
+    start_recording = False
     clock = Clock()
-    
-    get_input_thread = threading.Thread(target=get_input, daemon=True)
+    is_recording = False
+    record_buffer = None
+
+    get_input_thread = threading.Thread(target=get_input)
+    get_input_thread.setDaemon(True)
     get_input_thread.start()
-    
+
     n_imus = 5
+    accs_list, oris_list = [], []
+    raw_accs, raw_oris = [], []
     poses, trans = [], []
     
-    # Simple identity transformation (no calibration needed for testing)
-    smpl2imu = torch.eye(3)
-    device2bone = torch.eye(3).unsqueeze(0).repeat(n_imus, 1, 1)
-    acc_offsets = torch.zeros(n_imus, 3, 1)
+    actual_poses = []
     
-    model.eval()
-    print("Ready. Press 'q' to quit")
-    
+    # Track previous pelvis position for velocity-based front/back detection
+    prev_pelvis_pos = None
+    # Reset live session data at start
+    reset_live_session_data()
+
     while running:
         clock.tick(datasets.fps)
-        
-        # Get data from phone buffer
-        ori_raw, acc_raw = phone_buffer.get_current_buffer()
-        
+        ori_raw, acc_raw = imu_set.get_current_buffer()  # [buffer_len, 5, 4]
+
         if ori_raw.shape[0] == 0:
             time.sleep(0.01)
             continue
-        
-        # Convert quaternions to rotation matrices
+
+        # Use only last frame
+        ori_raw = ori_raw[-1:]
+        acc_raw = acc_raw[-1:]
+
         ori_raw = quaternion_to_rotation_matrix(ori_raw).view(-1, n_imus, 3, 3)
-        
-        # Apply transformations (simplified - using identity)
         glb_acc = (smpl2imu.matmul(acc_raw.view(-1, n_imus, 3, 1)) - acc_offsets).view(-1, n_imus, 3)
         glb_ori = smpl2imu.matmul(ori_raw).matmul(device2bone)
-        
-        # Normalization (reorder for combo: lw_rp)
+
+        # Optional flip (copied from your addition; disable if not needed)
+        # flip = torch.diag(torch.tensor([1.0, -1.0, 1.0], device=glb_ori.device))
+        # glb_ori = glb_ori.matmul(flip)
+
+        # Normalization (same as live_demo_orig.py)
         _acc = glb_acc.view(-1, 5, 3)[:, [1, 4, 3, 0, 2]] / amass.acc_scale
         _ori = glb_ori.view(-1, 5, 3, 3)[:, [1, 4, 3, 0, 2]]
-        
         acc = torch.zeros_like(_acc)
         ori = torch.zeros_like(_ori)
-        
-        # Device combo (using phone as multiple sensors)
-        combo = 'rp'
+
+        combo = "rp"  # only right pocket; change to e.g. 'lw_rp' if you add watch later
         c = amass.combos[combo]
-        acc[:, c] = _acc[:, c]
-        ori[:, c] = _ori[:, c]
-        
+
+        if USE_PHONE_AS_WATCH:
+            acc[:, [0]] = _acc[:, [3]]
+            ori[:, [0]] = _ori[:, [3]]
+        else:
+            acc[:, c] = _acc[:, c]
+            ori[:, c] = _ori[:, c]
+
         imu_input = torch.cat([acc.flatten(1), ori.flatten(1)], dim=1)
-        
-        # Predict pose and translation
+
         with torch.no_grad():
             output = model.forward_online(imu_input.squeeze(0), [imu_input.shape[0]])
-            pred_pose = output[0]  # [24, 3, 3]
-            pred_tran = output[2]  # [3]
-        
-        # Convert to axis angle
+            pred_pose = output[0]
+            # print("pred_pose shape:", pred_pose.shape)
+            # pred_joints = output[1]
+            pred_tran = output[2]
+
         pose = rotation_matrix_to_axis_angle(pred_pose.view(1, 216)).view(72)
         tran = pred_tran
-        
-        # Save for later
+
+        # Compute joint angle metrics from current pose/translation
+        try:
+            # Convert prev_pelvis_pos to tensor if it's a list/numpy array
+            if prev_pelvis_pos is not None and not isinstance(prev_pelvis_pos, torch.Tensor):
+                prev_pelvis_pos = torch.tensor(prev_pelvis_pos, dtype=torch.float32)
+            
+            # Extract joint metrics with velocity-based detection and data accumulation
+            joint_metrics = extract_poses_from_pose_tran(pose, tran, prev_pelvis_pos=prev_pelvis_pos, accumulate_data=True)
+            
+            # Update previous pelvis position for next frame (remove _pelvis_pos from metrics before sending)
+            if "_pelvis_pos" in joint_metrics:
+                prev_pelvis_pos = torch.tensor(joint_metrics["_pelvis_pos"], dtype=torch.float32)
+                # Create a copy without the internal tracking field for sending to frontend
+                metrics_to_send = {k: v for k, v in joint_metrics.items() if k != "_pelvis_pos"}
+            else:
+                metrics_to_send = joint_metrics
+            
+            print("Joint metrics:", metrics_to_send)
+            
+            try:
+                response = requests.post(
+                    "http://localhost:4000/joint-angles",
+                    json=metrics_to_send,
+                    timeout=1.0,  # optional
+                    proxies={"http": None, "https": None}, 
+                )
+            except Exception as e:
+                print("Error sending joint metrics:", e)
+
+        except Exception as e:
+            print("Error computing joint metrics:", e)
+
         if args.save:
+            actual_poses.append(pose.cpu())
+            accs_list.append(glb_acc)
+            oris_list.append(glb_ori)
+            raw_accs.append(acc_raw)
+            raw_oris.append(ori_raw)
             poses.append(pred_pose)
             trans.append(pred_tran)
-        
-        # Visualize with PyGame
+
         if args.vis:
-            # Handle pygame events
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-            
-            visualize_pose_pygame(pose, tran, screen, font)
-        
-        if os.getenv("DEBUG"):
-            print(f'\rOutput FPS: {clock.get_fps():.1f}', end='')
-    
-    # Save data
-    if args.save and poses:
+            if not visualizer.handle_events():
+                running = False
+            visualizer.draw_pose(pose, tran)
+
+            if os.getenv("DEBUG") is not None:
+                print("\r", "(recording)" if is_recording else "", "Sensor FPS:", imu_set.clock.get_fps(),
+                      "\tOutput FPS:", clock.get_fps(), end="")
+
+    if args.save:
         data = {
-            'pose': torch.stack(poses, dim=0),
-            'tran': torch.stack(trans, dim=0),
+            "raw_acc": torch.cat(raw_accs, dim=0) if len(raw_accs) > 0 else torch.empty(0, dtype=torch.float32),
+            "raw_ori": torch.cat(raw_oris, dim=0) if len(raw_oris) > 0 else torch.empty(0, dtype=torch.float32),
+            "acc": torch.cat(accs_list, dim=0) if len(accs_list) > 0 else torch.empty(0, dtype=torch.float32),
+            "ori": torch.cat(oris_list, dim=0) if len(oris_list) > 0 else torch.empty(0, dtype=torch.float32),
+            "pose": torch.cat(poses, dim=0) if len(poses) > 0 else torch.empty(0, dtype=torch.float32),
+            "tran": torch.cat(trans, dim=0) if len(trans) > 0 else torch.empty(0, dtype=torch.float32),
+            "calibration": {
+                "smpl2imu": smpl2imu,
+                "device2bone": device2bone,
+            },
+            "actual_poses": torch.stack(actual_poses, dim=0)
         }
-        torch.save(data, paths.dev_data / f'phone_data_{int(time.time())}.pt')
+        torch.save(data, f"data/runs/phone_dev_{int(time.time())}.pt")
+
+    # Calculate average joint angles when session ends
+    average_data = calculate_averages_from_live_data()
+    if average_data is not None:
+        print(f"\nCalculating average joint angles from {average_data['totalFrames']} frames...")
+        
+        # Add session end time
+        from datetime import datetime
+        average_data['sessionEndTime'] = datetime.now().isoformat()
+        
+        # Save to JSON file
+        output_file = f"data/avgs/live_session_averages_{int(time.time())}.json"
+        with open(output_file, 'w') as f:
+            json.dump(average_data, f, indent=2)
+        print(f"✓ Average joint angles saved to {output_file}")
+        
+        # Also save to a fixed filename for easy frontend access
+        fixed_output_file = "data/avgs/latest_session_averages.json"
+        with open(fixed_output_file, 'w') as f:
+            json.dump(average_data, f, indent=2)
+        print(f"✓ Also saved to {fixed_output_file} for frontend access")
     
-    print('\nFinish.')
+        
+        # Send to the frontend
+        try:
+            response = requests.post(
+                "http://localhost:4000/joint-angles",
+                json=average_data,
+                timeout=1.0,  # optional
+                proxies={"http": None, "https": None}, 
+            )
+        except Exception as e:
+            print("Error sending joint metrics:", e)
+        
+        # Print summary
+    #     print(f"\nSession Summary:")
+    #     print(f"  - Total frames: {average_data['totalFrames']}")
+    #     print(f"  - Front knee angle: {average_data['jointAngles']['frontKnee']['angle']:.1f}°")
+    #     print(f"    → Range: {average_data['jointAngles']['frontKnee']['min']:.1f}° - {average_data['jointAngles']['frontKnee']['max']:.1f}°")
+    #     print(f"  - Back knee angle: {average_data['jointAngles']['backKnee']['angle']:.1f}°")
+    #     print(f"    → Range: {average_data['jointAngles']['backKnee']['min']:.1f}° - {average_data['jointAngles']['backKnee']['max']:.1f}°")
+    #     print(f"  - Back to head angle: {average_data['jointAngles']['backToHead']['angle']:.1f}°")
+    #     print(f"  - Elbow angles: L={average_data['jointAngles']['elbow']['left']:.1f}°, R={average_data['jointAngles']['elbow']['right']:.1f}°")
+    #     print(f"  - Elbow symmetry: {average_data['jointAngles']['elbow']['symmetry']:.1f}%")
+    # else:
+    #     print("\nNo joint angle data accumulated during this session.")
+
+    if args.vis:
+        visualizer.close()
+    get_input_thread.join()
+    imu_set.stop_reading()
+    print("Finish.")
