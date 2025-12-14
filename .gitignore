@@ -41,7 +41,7 @@ venv.bak/
 **/wandb/
 **/*.egg-info/
 **/.ipynb_checkpoints/
-**/checkpoints/
+# **/checkpoints/
 **/data/
 **/tranpose/
 **/a.mp4
